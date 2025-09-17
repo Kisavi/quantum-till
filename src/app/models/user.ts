@@ -1,5 +1,4 @@
 import { User as FirebaseUser } from 'firebase/auth';
-import { Role } from './role';
 
 export interface User extends FirebaseUser {
   userId: string;
@@ -7,3 +6,5 @@ export interface User extends FirebaseUser {
   active: boolean;
   rating: number;
 }
+
+export type Role = 'ADMIN' | 'RIDER' | 'COOK';

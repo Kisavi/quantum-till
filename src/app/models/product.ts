@@ -2,7 +2,7 @@ export interface Product {
   id: string;
   name: string;
   unitPrice: number;
-  unitSize: number; // Grams
-  // manufactureDate: Date;
-  // expiryDate: Date;
+  itemsPerPacket: number; // Number of items per packet. Default = 1
+  weight: number; // Grams
+  shelfLife: number; // Days
 }

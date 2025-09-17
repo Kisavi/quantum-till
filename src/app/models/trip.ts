@@ -1,5 +1,4 @@
 import { Route } from './route';
-import { TripStatus } from './trip-status';
 import { Vehicle } from './vehicle';
 
 export interface Trip {
@@ -11,3 +10,5 @@ export interface Trip {
   endOdometerReading: number;
   status: TripStatus;
 }
+
+export type TripStatus = 'PENDING' | 'ONGOING' | 'ENDED';
