@@ -1,0 +1,15 @@
+<form [formGroup]="signInForm" class="flex ">
+  <p-floatlabel variant="on">
+    <input pInputText id="email" formControlName="email" />
+    <label for="email">Email</label>
+  </p-floatlabel>
+
+  <p-floatlabel variant="on">
+    <input pInputText id="password" formControlName="password" />
+    <label for="password">Password</label>
+  </p-floatlabel>
+
+  <button pButton>
+    <span pButtonLabel>Log In</span>
+  </button>
+</form>
