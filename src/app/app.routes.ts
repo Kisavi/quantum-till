@@ -1,21 +1,24 @@
 import { Routes } from '@angular/router';
-import { authGuard } from './core/guards/auth-guard';
+import { AuthGuard, redirectLoggedInTo, redirectUnauthorizedTo } from '@angular/fire/auth-guard';
 import { MainLayout } from './core/layout/main-layout/main-layout';
 
 export const routes: Routes = [
   {
     path: 'auth',
-    loadChildren: () =>
-      import('./features/authentication/authentication.routes').then((m) => m.routes),
+    canActivate: [AuthGuard],
+    data: { authGuardPipe: () => redirectLoggedInTo(['/dashboard']) },
+    loadChildren: () => import('./features/auth/auth.routes').then((m) => m.routes),
   },
   {
     path: '',
-    canActivate: [authGuard],
+    canActivate: [AuthGuard],
+    data: { authGuardPipe: () => redirectUnauthorizedTo(['/auth']) },
     component: MainLayout,
     children: [
       {
         path: 'dashboard',
-        loadChildren: () => import('./features/dashboard/dashboard.routes').then((m) => m.routes),
+        loadComponent: () =>
+          import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent),
       },
     ],
   },
