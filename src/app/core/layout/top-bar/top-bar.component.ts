@@ -3,6 +3,8 @@ import { Component } from '@angular/core';
 @Component({
   selector: 'app-top-bar',
   imports: [],
-  templateUrl: './top-bar.html',
+  templateUrl: './top-bar.component.html'
 })
-export class TopBar {}
+export class TopBarComponent {
+
+}

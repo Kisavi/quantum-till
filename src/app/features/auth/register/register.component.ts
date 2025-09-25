@@ -32,7 +32,7 @@ export class RegisterComponent {
 
     try {
       await createUserWithEmailAndPassword(this.auth, email, password);
-      // this.auth.updateCurrentUser({ displayName }); // Set user's display name
+      // this.auth.updateCurrentUser({ displayName }); //TODO: Set user's display name
       this.router.navigate(['/']);
     } catch (e) {
       const error = e as FirebaseError;
