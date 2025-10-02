@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Quantum Till</string>
+    <string name="title_activity_main">Quantum Till</string>
+    <string name="package_name">com.QuantumTill.app</string>
+    <string name="custom_url_scheme">com.QuantumTill.app</string>
+</resources>
