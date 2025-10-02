@@ -9,12 +9,4 @@ import { ButtonDirective } from "primeng/button";
   templateUrl: './dashboard.component.html',
 })
 export class DashboardComponent {
-  auth = inject(Auth);
-  router = inject(Router);
-
-  logout() {
-    this.auth.signOut().then(() => {
-      this.router.navigate(['/auth/login']);
-    });
-  }
 }
