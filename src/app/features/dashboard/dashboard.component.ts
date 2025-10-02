@@ -5,7 +5,7 @@ import { ButtonDirective } from "primeng/button";
 
 @Component({
   selector: 'app-dashboard',
-  imports: [ButtonDirective],
+  imports: [],
   templateUrl: './dashboard.component.html',
 })
 export class DashboardComponent {

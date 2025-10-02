@@ -36,13 +36,11 @@ export class SideMenuComponent implements OnInit {
                 items: [
                     {
                         label: 'New',
-                        icon: 'pi pi-plus',
-                        shortcut: '⌘+N'
+                        icon: 'pi pi-plus'
                     },
                     {
                         label: 'Search',
-                        icon: 'pi pi-search',
-                        shortcut: '⌘+S'
+                        icon: 'pi pi-search'
                     }
                 ]
             },
@@ -51,8 +49,7 @@ export class SideMenuComponent implements OnInit {
                 items: [
                     {
                         label: 'Settings',
-                        icon: 'pi pi-cog',
-                        shortcut: '⌘+O'
+                        icon: 'pi pi-cog'
                     },
                     {
                         label: 'Messages',
@@ -62,7 +59,6 @@ export class SideMenuComponent implements OnInit {
                     {
                         label: 'Logout',
                         icon: 'pi pi-sign-out',
-                        shortcut: '⌘+Q',
                         command: () => this.logout()
                     }
                 ]
