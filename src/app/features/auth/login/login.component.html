@@ -1,0 +1,46 @@
+<form [formGroup]="loginForm">
+  <h1 class="font-bold text-2xl mb-12">Log In</h1>
+
+  <div class="flex flex-col gap-6 mb-1">
+    @if (errorMessage) {
+    <p-message severity="error">{{ errorMessage }}</p-message>
+    }
+
+    <p-floatlabel variant="on">
+      <input
+        id="email"
+        type="email"
+        pSize="large"
+        pInputText
+        formControlName="email"
+        autocomplete="email"
+      />
+      <label for="email">Email</label>
+    </p-floatlabel>
+
+    <p-floatlabel variant="on">
+      <input
+        id="password"
+        type="password"
+        pSize="large"
+        pInputText
+        formControlName="password"
+        autocomplete="current-password"
+      />
+      <label for="password">Password</label>
+    </p-floatlabel>
+  </div>
+
+  <div class="text-end mb-2">
+    <a routerLink="/auth/forgot-password" class="text-sm text-green-600">Forgot Password?</a>
+  </div>
+
+  <button (click)="login()" pButton class="text-center w-full mb-10">
+    <span pButtonLabel>Login</span>
+  </button>
+
+  <div class="text-center">
+    Dont have an Account?
+    <a routerLink="/auth/register" class="font-medium text-green-600">Register</a>
+  </div>
+</form>

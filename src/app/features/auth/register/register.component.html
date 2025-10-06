@@ -1,0 +1,70 @@
+<form [formGroup]="registerForm">
+  <h1 class="font-bold text-2xl mb-12">Register</h1>
+
+  <div class="flex flex-col gap-6">
+    @if (errorMessage) {
+    <p-message severity="error">{{ errorMessage }}</p-message>
+    }
+
+    <p-floatlabel variant="on">
+      <input
+        id="full-name"
+        type="text"
+        pSize="large"
+        pInputText
+        formControlName="displayName"
+        autocomplete="name"
+        class="w-full"
+      />
+      <label for="full-name">Full Name</label>
+    </p-floatlabel>
+
+    <p-floatlabel variant="on">
+      <input
+        id="email"
+        type="email"
+        pSize="large"
+        pInputText
+        formControlName="email"
+        autocomplete="email"
+        class="w-full"
+      />
+      <label for="email">Email</label>
+    </p-floatlabel>
+
+    <div class="grid grid-cols-2 gap-6">
+      <p-floatlabel variant="on">
+        <input
+          id="password"
+          type="password"
+          pSize="large"
+          pInputText
+          formControlName="password"
+          autocomplete="new-password"
+        />
+        <label for="password">Password</label>
+      </p-floatlabel>
+
+      <p-floatlabel variant="on">
+        <input
+          id="confirm-password"
+          type="password"
+          pSize="large"
+          pInputText
+          formControlName="confirmPassword"
+          autocomplete="new-password"
+        />
+        <label for="confirm-password">Password</label>
+      </p-floatlabel>
+    </div>
+
+    <button (click)="register()" pButton class="text-center w-full mb-10">
+      <span pButtonLabel>Register</span>
+    </button>
+  </div>
+
+  <div class="text-center">
+    Already have an Account?
+    <a routerLink="/auth/login" class="font-medium text-green-600">Login</a>
+  </div>
+</form>
