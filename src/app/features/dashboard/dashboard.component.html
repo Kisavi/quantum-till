@@ -1,0 +1,125 @@
+<div class="card p-6">
+    <!-- Greeting + Stats Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 mb-12">
+
+        <!-- Greeting Card -->
+        <div
+            class="lg:col-span-4 border border-blue-300 shadow-sm rounded-2xl bg-gradient-to-r from-gray-50 to-blue-50 text-gray-800 p-5">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 flex items-center justify-center">
+                    <span class="text-3xl animate-bounce">👋</span>
+                </div>
+                <span class="text-2xl font-bold">Greetings Admin,</span>
+            </div>
+            <p class="mt-2 font-medium font-bold">
+                Your dashboard gives you views of key performance of your business.
+            </p>
+        </div>
+
+        <!-- Total Sales -->
+        <div
+            class="lg:col-span-2 shadow-sm p-4 rounded-2xl border-0 bg-gradient-to-r from-gray-50 via-green-50 to-emerald-50">
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-100 text-blue-500 rounded-full w-12 h-12 flex items-center justify-center">
+                    <i class="pi pi-dollar" style="font-size: 1.8rem"></i>
+                </div>
+                <span class="font-medium text-gray-700">Total Sales</span>
+            </div>
+            <p class="mt-2 text-2xl font-bold text-gray-900">Ksh. 1,800,000</p>
+        </div>
+
+        <!-- Total Due Payments -->
+        <div
+            class="lg:col-span-2 shadow-sm p-4 rounded-2xl border-0 bg-gradient-to-r from-gray-50 via-cyan-50 to-blue-50">
+            <div class="flex items-center gap-3">
+                <div class="bg-cyan-100 text-cyan-500 rounded-full w-12 h-12 flex items-center justify-center">
+                    <i class="pi pi-receipt" style="font-size: 1.8rem"></i>
+                </div>
+                <span class="font-medium text-gray-700">Total Due Payments</span>
+            </div>
+            <p class="mt-2 text-2xl font-bold text-gray-900">Ksh. 1,200,000</p>
+        </div>
+
+        <!-- Net Profit -->
+        <div
+            class="lg:col-span-2 shadow-sm p-4 rounded-2xl border-0 bg-gradient-to-r from-gray-50 via-green-50 to-emerald-50">
+            <div class="flex items-center gap-3">
+                <div class="bg-green-100 text-green-500 rounded-full w-12 h-12 flex items-center justify-center">
+                    <i class="pi pi-wave-pulse" style="font-size: 1.8rem"></i>
+                </div>
+                <span class="font-medium text-gray-700">Net Profit</span>
+            </div>
+            <p class="mt-2 text-2xl font-bold text-gray-900">Ksh. 600,000</p>
+        </div>
+
+        <!-- Total Customers -->
+        <div
+            class="lg:col-span-2 shadow-sm p-4 rounded-2xl border-0 bg-gradient-to-r from-gray-50 via-purple-50 to-indigo-50">
+            <div class="flex items-center gap-3">
+                <div class="bg-purple-100 text-purple-500 rounded-full w-12 h-12 flex items-center justify-center">
+                    <i class="pi pi-users" style="font-size: 1.8rem"></i>
+                </div>
+                <span class="font-medium text-gray-700">Total Customers</span>
+            </div>
+            <p class="mt-2 text-2xl font-bold text-gray-900">345 Shops</p>
+        </div>
+
+    </div>
+
+    <!-- Products Table -->
+    <div class=" rounded-2xl shadow-sm border border-gray-200 bg-white mb-10 overflow-x-auto">
+        <p-table [scrollable]="true" [value]="products" stripedRows responsiveLayout="scrollable">
+            <ng-template #header>
+                <tr class="bg-gray-100 text-gray-700">
+                    <th class="p-3 text-left">Name</th>
+                    <th class="p-3 text-left">Code</th>
+                    <th class="p-3 text-left">Category</th>
+                    <th class="p-3 text-left">Quantity</th>
+                </tr>
+            </ng-template>
+            <ng-template #body let-product>
+                <tr class="hover:bg-gray-50 transition">
+                    <td class="p-3">
+                        <div class="flex items-center gap-3">
+                            <img [src]="product.image" alt="product image"
+                                class="w-10 h-10 rounded-full object-cover border border-gray-200" />
+                            <span>{{ product.name }}</span>
+                        </div>
+                    </td>
+                    <td class="p-3">{{ product.code }}</td>
+                    <td class="p-3">{{ product.category }}</td>
+                    <td class="p-3">{{ product.quantity }}</td>
+                </tr>
+            </ng-template>
+        </p-table>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Pie Chart -->
+        <div class="shadow-sm rounded-2xl border border-gray-200 bg-white p-6 flex flex-col">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="bg-blue-100 text-blue-500 rounded-full w-10 h-10 flex items-center justify-center">
+                    <i class="pi pi-chart-pie" style="font-size: 1.2rem"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-800">Category Distribution</h3>
+            </div>
+            <div class="flex-1">
+                <p-chart type="pie" [data]="pieData" [options]="pieOptions" styleClass="w-full h-full"></p-chart>
+            </div>
+        </div>
+
+        <!-- Bar Chart -->
+        <div class=" shadow-sm rounded-2xl border border-gray-200 bg-white p-6 flex flex-col">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="bg-green-100 text-green-500 rounded-full w-10 h-10 flex items-center justify-center">
+                    <i class="pi pi-chart-bar" style="font-size: 1.2rem"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-800">Monthly Sales</h3>
+            </div>
+            <div class="flex-1">
+                <p-chart type="bar" [data]="barData" styleClass="w-full"></p-chart>
+            </div>
+        </div>
+    </div>
+</div>
