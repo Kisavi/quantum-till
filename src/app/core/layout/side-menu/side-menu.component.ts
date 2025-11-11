@@ -20,52 +20,50 @@ export class SideMenuComponent implements OnInit {
     auth = inject(Auth);
     router = inject(Router);
 
-  logout() {
-    this.auth.signOut().then(() => {
-      this.router.navigate(['/auth/login']);
-    });
-  }
+    logout() {
+        this.auth.signOut().then(() => {
+            this.router.navigate(['/auth/login']);
+        });
+    }
 
     ngOnInit() {
         this.items = [
             {
-                separator: true
-            },
-            {
-                label: 'Documents',
-                items: [
-                    {
-                        label: 'New',
-                        icon: 'pi pi-plus'
-                    },
-                    {
-                        label: 'Search',
-                        icon: 'pi pi-search'
-                    }
+                label: 'Overview', items: [
+                    { label: 'Dashboard', icon: 'pi pi-home', routerLink: '/dashboard' },
                 ]
             },
             {
-                label: 'Profile',
-                items: [
-                    {
-                        label: 'Settings',
-                        icon: 'pi pi-cog'
-                    },
-                    {
-                        label: 'Messages',
-                        icon: 'pi pi-inbox',
-                        badge: '2'
-                    },
-                    {
-                        label: 'Logout',
-                        icon: 'pi pi-sign-out',
-                        command: () => this.logout()
-                    }
+                label: 'Operations', items: [
+                    { label: 'Sales', icon: 'pi pi-shopping-cart', routerLink: '/sales' },
+                    { label: 'Returns', icon: 'pi pi-undo', routerLink: '/returns' },
+                    { label: 'Distributors', icon: 'pi pi-truck', routerLink: '/drivers' },
+                    { label: 'Trips', icon: 'pi pi-map', routerLink: '/trips' },
+                    { label: 'Routes', icon: 'pi pi-map-marker', routerLink: '/routes' },
                 ]
             },
             {
-                separator: true
-            }
+                label: 'Inventory', items: [
+                    { label: 'Products', icon: 'pi pi-tags', routerLink: '/products' },
+                    { label: 'Inventory', icon: 'pi pi-box', routerLink: '/inventory' },
+                ]
+            },
+            {
+                label: 'People', items: [
+                    { label: 'Customers', icon: 'pi pi-user-plus', routerLink: '/customers' },
+                    { label: 'Users', icon: 'pi pi-users', routerLink: '/users' },
+                ]
+            },
+            {
+                label: 'Administration', items: [
+                    { label: 'Roles', icon: 'pi pi-shield', routerLink: '/roles' },
+                    { label: 'Expenses', icon: 'pi pi-wallet', routerLink: '/expenses' },
+                    { label: 'Assets', icon: 'pi pi-cog', routerLink: '/assets' },
+                ]
+            },
+            { separator: true },
+            { label: 'Sign Out', icon: 'pi pi-sign-out', command: () => this.logout() },
         ];
+
     }
 }
