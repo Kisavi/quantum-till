@@ -28,6 +28,7 @@ export class SideMenuComponent implements OnInit {
 
     ngOnInit() {
         this.items = [
+            { separator: true },
             {
                 label: 'Overview', items: [
                     { label: 'Dashboard', icon: 'pi pi-home', routerLink: '/dashboard' },
@@ -62,7 +63,11 @@ export class SideMenuComponent implements OnInit {
                 ]
             },
             { separator: true },
-            { label: 'Sign Out', icon: 'pi pi-sign-out', command: () => this.logout() },
+            {
+                label: '', items: [
+                    { label: 'Sign Out', icon: 'pi pi-sign-out', command: () => this.logout() },
+                ]
+            }
         ];
 
     }
