@@ -1,0 +1,335 @@
+<div class="card p-6">
+  <!-- Header Section -->
+  <div class="flex justify-between items-center mb-6">
+    <div class="flex items-center space-x-4">
+      <!-- <i class="pi pi-truck text-3xl text-blue-600"></i> -->
+      <div>
+        <h1 class="text-2xl font-bold text-gray-800">Distributors</h1>
+        <p class="text-gray-600">Manage your sales persons and their details.</p>
+      </div>
+    </div>
+    <p-button 
+      label="Add Distributor" 
+      icon="pi pi-plus" 
+      severity="success" 
+      (onClick)="showDialog()"
+      class="p-button-rounded">
+    </p-button>
+  </div>
+
+  <!-- Distributors Table -->
+  <p-card>
+    <p-table
+        [scrollable]="true"  stripedRows="true" showGridlines="true"
+        scrollHeight="flex" [value]="distributors()" [tableStyle]="{'min-width': '80rem'}">
+      <ng-template pTemplate="header">
+        <tr>
+          <th class="whitespace-nowrap">Full Name</th>
+          <th class="whitespace-nowrap">Phone</th>
+          <th class="whitespace-nowrap">Email</th>
+          <th class="whitespace-nowrap">Role</th>
+          <th class="whitespace-nowrap">Car Assigned</th>
+          <th class="whitespace-nowrap">Routes Assigned</th>
+          <th class="whitespace-nowrap">Status</th>
+          <th class="whitespace-nowrap">Date Joined</th>
+          <th class="whitespace-nowrap">Date Left</th>
+          <th class="whitespace-nowrap">Documents</th>
+          <th class="whitespace-nowrap">Actions</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-distributor>
+        <tr class="hover:bg-gray-50">
+          <td class="font-medium whitespace-nowrap">{{ distributor.fullName }}</td>
+          <td class="whitespace-nowrap">{{ distributor.phone }}</td>
+          <td class="whitespace-nowrap">{{ distributor.email }}</td>
+          <td class="whitespace-nowrap">{{ distributor.role }}</td>
+          <td class="whitespace-nowrap">{{ distributor.carAssigned }}</td>
+          <td class="max-w-xs truncate" Tooltip="distributor.routesAssigned">{{ distributor.routesAssigned }}</td>
+          <td>
+            <span [class]="distributor.status === 'active' ? 'px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs' : 'px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs'">
+              {{ distributor.status | titlecase }}
+            </span>
+          </td>
+          <td>{{ distributor.dateJoined | date:'dd/MM/yyyy' }}</td>
+          <td>{{ distributor.dateLeft ? (distributor.dateLeft | date:'dd/MM/yyyy') : 'N/A' }}</td>
+          <td class="flex space-x-1">
+            <div class="flex space-x-2">
+            <p-button 
+              icon="pi pi-eye" 
+              severity="info" 
+              size="small" 
+              rounded 
+              (onClick)="viewImage('/assets/img/' + distributor.idFront)"
+              pTooltip="View ID Front">
+            </p-button>
+            <p-button 
+              icon="pi pi-eye" 
+              severity="info" 
+              size="small" 
+              rounded 
+              (onClick)="viewImage('/assets/img/' + distributor.idBack)"
+              pTooltip="View ID Back">
+            </p-button>
+            <p-button 
+              icon="pi pi-eye" 
+              severity="info" 
+              size="small" 
+              rounded 
+              (onClick)="viewImage('/assets/img/' + distributor.profilePicture)"
+              pTooltip="View Profile Picture">
+            </p-button>
+        </div>
+          </td>
+          <td >
+            <div class="flex space-x-2">
+            <p-button 
+              icon="pi pi-pencil" 
+              severity="info" 
+              size="small" 
+              rounded 
+              (onClick)="editDistributor(distributor)"
+              pTooltip="Edit">
+            </p-button>
+            <p-button 
+              icon="pi pi-trash" 
+              severity="danger" 
+              size="small" 
+              rounded 
+              (onClick)="deleteDistributor(distributor)"
+              pTooltip="Delete">
+            </p-button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="11" class="text-center py-8 text-gray-500">No distributors found. Add one to get started!</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+
+  <!-- Add/Edit Distributor Dialog -->
+  <p-dialog 
+    [visible]="visibleDialog()" 
+    [header]="isEditing() ? 'Edit Distributor' : 'Add New Distributor'" 
+    [style]="{ width: '60vw' }"
+    styleClass="overflow-auto max-h-[80vh]"
+    [baseZIndex]="10000"
+    [modal]="true"
+    (onHide)="hideDialog()"
+    (visibleChange)="visibleDialog.set($event)">
+    <form [formGroup]="distributorForm" class="flex flex-col gap-4 w-full">
+      <!-- Full Name Row -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="flex flex-col gap-1">
+          <label for="firstName" class="text-sm font-medium text-gray-700">First Name *</label>
+          <input pInputText type="text" id="firstName" placeholder="First Name" formControlName="firstName" [invalid]="isInvalid('firstName')" />
+          @if (isInvalid('firstName')) {
+            <p-message severity="error" size="small" variant="simple">First name is required.</p-message>
+          }
+        </div>
+        <div class="flex flex-col gap-1">
+          <label for="middleName" class="text-sm font-medium text-gray-700">Middle Name</label>
+          <input pInputText type="text" id="middleName" placeholder="Middle Name" formControlName="middleName" [invalid]="isInvalid('middleName')" />
+          @if (isInvalid('middleName')) {
+            <p-message severity="error" size="small" variant="simple">Middle name must be at least 2 characters.</p-message>
+          }
+        </div>
+        <div class="flex flex-col gap-1">
+          <label for="lastName" class="text-sm font-medium text-gray-700">Last Name *</label>
+          <input pInputText type="text" id="lastName" placeholder="Last Name" formControlName="lastName" [invalid]="isInvalid('lastName')" />
+          @if (isInvalid('lastName')) {
+            <p-message severity="error" size="small" variant="simple">Last name is required.</p-message>
+          }
+        </div>
+      </div>
+
+      <!-- ID Number, Phone, Email Row -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="flex flex-col gap-1">
+          <label for="idNumber" class="text-sm font-medium text-gray-700">ID Number *</label>
+          <input pInputText type="text" id="idNumber" placeholder="12345678" formControlName="idNumber" [invalid]="isInvalid('idNumber')" />
+          @if (isInvalid('idNumber')) {
+            <p-message severity="error" size="small" variant="simple">Invalid ID number format.</p-message>
+          }
+        </div>
+        <div class="flex flex-col gap-1">
+          <label for="phone" class="text-sm font-medium text-gray-700">Phone Number *</label>
+          <input pInputText type="tel" id="phone" placeholder="0700 123 456" formControlName="phone" [invalid]="isInvalid('phone')" />
+          @if (isInvalid('phone')) {
+            <p-message severity="error" size="small" variant="simple">Invalid phone number format.</p-message>
+          }
+        </div>
+        <div class="flex flex-col gap-1">
+          <label for="email" class="text-sm font-medium text-gray-700">Email *</label>
+          <input pInputText type="email" id="email" placeholder="example@email.com" formControlName="email" [invalid]="isInvalid('email')" />
+          @if (isInvalid('email')) {
+            @if (distributorForm.get('email')?.errors?.['required']) {
+              <p-message severity="error" size="small" variant="simple">Email is required.</p-message>
+            }
+            @if (distributorForm.get('email')?.errors?.['email']) {
+              <p-message severity="error" size="small" variant="simple">Please enter a valid email.</p-message>
+            }
+          }
+        </div>
+      </div>
+
+      <!-- Role, Car Assigned, Routes Assigned Row -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="flex flex-col gap-1">
+          <label for="role" class="text-sm font-medium text-gray-700">Role *</label>
+          <p-select 
+            id="role" 
+            [options]="roleOptions" 
+            formControlName="role" 
+            optionLabel="label" 
+            optionValue="value" 
+            placeholder="Select Role" 
+            class="w-full"
+            [ngClass]="{'p-invalid': isInvalid('role')}" />
+          @if (isInvalid('role')) {
+            <p-message severity="error" size="small" variant="simple">Role is required.</p-message>
+          }
+        </div>
+        <div class="flex flex-col gap-1">
+          <label for="carAssigned" class="text-sm font-medium text-gray-700">Car Assigned *</label>
+          <p-select 
+            id="carAssigned" 
+            [options]="carOptions" 
+            formControlName="carAssigned" 
+            optionLabel="label" 
+            optionValue="value" 
+            placeholder="Select Car" 
+            class="w-full"
+            [ngClass]="{'p-invalid': isInvalid('carAssigned')}" />
+          @if (isInvalid('carAssigned')) {
+            <p-message severity="error" size="small" variant="simple">Car is required.</p-message>
+          }
+        </div>
+        <div class="flex flex-col gap-1">
+          <label for="routesAssigned" class="text-sm font-medium text-gray-700">Routes Assigned *</label>
+          <p-multiSelect 
+            id="routesAssigned" 
+            [options]="routeOptions" 
+            formControlName="routesAssigned" 
+            optionLabel="label" 
+            optionValue="value" 
+            placeholder="Select Routes" 
+            class="w-full"
+            [ngClass]="{'p-invalid': isInvalid('routesAssigned')}" />
+          @if (isInvalid('routesAssigned')) {
+            <p-message severity="error" size="small" variant="simple">At least one route is required.</p-message>
+          }
+        </div>
+      </div>
+
+     
+      
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Status Row -->
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-medium text-gray-700">Status *</label>
+     <p-select 
+            id="status" 
+            [options]="status" 
+            formControlName="status" 
+            optionLabel="label" 
+            optionValue="value" 
+            placeholder="Select Status" 
+            class="w-full"
+            [ngClass]="{'p-invalid': isInvalid('status')}" />
+          
+        @if (isInvalid('status')) {
+          <p-message severity="error" size="small" variant="simple">Status is required.</p-message>
+        }
+      </div> 
+
+            <!-- Dates Row -->
+        <div class="flex flex-col gap-1">
+          <label for="dateJoined" class="text-sm font-medium text-gray-700">Date Joined *</label>
+          <p-datepicker id="dateJoined" formControlName="dateJoined" [showIcon]="true" class="w-full" [ngClass]="{'p-invalid': isInvalid('dateJoined')}" />
+          @if (isInvalid('dateJoined')) {
+            <p-message severity="error" size="small" variant="simple">Date joined is required.</p-message>
+          }
+        </div>
+        <div class="flex flex-col gap-1">
+          <label for="dateLeft" class="text-sm font-medium text-gray-700">Date Left (Optional)</label>
+          <p-datepicker id="dateLeft" formControlName="dateLeft" [showIcon]="true" class="w-full" />
+        </div>
+      </div>
+       <!-- File Uploads Row -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="flex flex-col gap-1">
+          <label for="idFront" class="text-sm font-medium text-gray-700">ID Front *</label>
+          <input type="file" id="idFront" accept="image/*" (change)="onFileChange($event, 'idFront')" class="w-full p-2 border rounded" [ngClass]="{'p-invalid': isInvalid('idFront')}" />
+          @if (distributorForm.get('idFront')?.value) {
+            <div class="flex items-center gap-2 mt-2">
+              <img [src]="getPreviewUrl('idFront')" [alt]="distributorForm.get('idFront')?.value" class="w-20 h-20 object-contain rounded" />
+              <p-button icon="pi pi-times" severity="danger" size="small" (onClick)="onClearImage('idFront')" pTooltip="Clear Image"></p-button>
+            </div>
+          }
+          @if (isInvalid('idFront')) {
+            <p-message severity="error" size="small" variant="simple">ID front image is required.</p-message>
+          }
+        </div>
+        <div class="flex flex-col gap-1">
+          <label for="idBack" class="text-sm font-medium text-gray-700">ID Back *</label>
+          <input type="file" id="idBack" accept="image/*" (change)="onFileChange($event, 'idBack')" class="w-full p-2 border rounded" [ngClass]="{'p-invalid': isInvalid('idBack')}" />
+          @if (distributorForm.get('idBack')?.value) {
+            <div class="flex items-center gap-2 mt-2">
+              <img [src]="getPreviewUrl('idBack')" [alt]="distributorForm.get('idBack')?.value" class="w-20 h-20 rounded object-contain" />
+              <p-button icon="pi pi-times" severity="danger" size="small" (onClick)="onClearImage('idBack')" pTooltip="Clear Image"></p-button>
+            </div>
+          }
+          @if (isInvalid('idBack')) {
+            <p-message severity="error" size="small" variant="simple">ID back image is required.</p-message>
+          }
+        </div>
+        <div class="flex flex-col gap-1">
+          <label for="profilePicture" class="text-sm font-medium text-gray-700">Profile Picture *</label>
+          <input type="file" id="profilePicture" accept="image/*" (change)="onFileChange($event, 'profilePicture')" class="w-full p-2 border rounded" [ngClass]="{'p-invalid': isInvalid('profilePicture')}" />
+          @if (distributorForm.get('profilePicture')?.value) {
+            <div class="flex items-center gap-2 mt-2">
+              <img [src]="getPreviewUrl('profilePicture')" [alt]="distributorForm.get('profilePicture')?.value" class="w-20 h-20 rounded object-contain border bg-gray-50" />
+              <p-button icon="pi pi-times" severity="danger" size="small" (onClick)="onClearImage('profilePicture')" pTooltip="Clear Image"></p-button>
+            </div>
+          }
+          @if (isInvalid('profilePicture')) {
+            <p-message severity="error" size="small" variant="simple">Profile picture is required.</p-message>
+          }
+        </div>
+      </div>
+
+    </form>
+    <ng-template pTemplate="footer">
+      <p-button 
+        label="Cancel" 
+        icon="pi pi-times" 
+        severity="secondary" 
+        (onClick)="hideDialog()"
+        class="p-button-text">
+      </p-button>
+      <button pButton severity="success" (click)="saveDistributor()" type="button" [disabled]="distributorForm.invalid">
+        <span pButtonLabel>Save</span>
+        <i class="pi pi-check p-button-icon-left"></i>
+      </button>
+    </ng-template>
+  </p-dialog>
+
+  <!-- Image Preview Modal -->
+  <p-dialog 
+    [(visible)]="visibleImageModal" 
+    [style]="{ width: '22rem', height: 'auto' }"
+    [modal]="true"
+    >
+    <div class="flex justify-center">
+      <img [src]="selectedImageUrl()" [alt]="'Preview'" class="max-w-full max-h-[60vh] object-contain rounded" />
+    </div>
+  </p-dialog>
+
+  <!-- Toast for Messages -->
+  <p-toast></p-toast>
+</div>

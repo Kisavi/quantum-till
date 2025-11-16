@@ -7,13 +7,13 @@ import { BadgeModule } from 'primeng/badge';
 import { RippleModule } from 'primeng/ripple';
 import { AvatarModule } from 'primeng/avatar';
 import { Auth } from '@angular/fire/auth';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 
 @Component({
     selector: 'app-side-menu',
     templateUrl: './side-menu.component.html',
-    imports: [MenuModule, BadgeModule, RippleModule, AvatarModule, CommonModule]
+    imports: [MenuModule, BadgeModule, RippleModule, AvatarModule, CommonModule, RouterModule]
 })
 export class SideMenuComponent implements OnInit {
     items: MenuItem[] | undefined;
@@ -38,7 +38,7 @@ export class SideMenuComponent implements OnInit {
                 label: 'Operations', items: [
                     { label: 'Sales', icon: 'pi pi-shopping-cart', routerLink: '/sales' },
                     { label: 'Returns', icon: 'pi pi-undo', routerLink: '/returns' },
-                    { label: 'Distributors', icon: 'pi pi-truck', routerLink: '/drivers' },
+                    { label: 'Distributors', icon: 'pi pi-truck', routerLink: '/distributors' },
                     { label: 'Trips', icon: 'pi pi-map', routerLink: '/trips' },
                     { label: 'Routes', icon: 'pi pi-map-marker', routerLink: '/routes' },
                 ]

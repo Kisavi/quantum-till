@@ -1,7 +1,6 @@
 import { Routes } from '@angular/router';
 import { AuthGuard, redirectLoggedInTo, redirectUnauthorizedTo } from '@angular/fire/auth-guard';
 import { MainLayoutComponent } from './core/layout/main-layout/main-layout.component';
-import { DashboardComponent } from './features/dashboard/dashboard.component';
 
 export const routes: Routes = [
   {
@@ -20,6 +19,16 @@ export const routes: Routes = [
         path: 'dashboard',
         loadComponent: () =>
           import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent),
+      },
+      {
+        path: 'distributors',
+        loadComponent: () =>
+          import('./features/distributors/distributors.component').then((m) => m.DistributorsComponent), 
+      },
+      {
+        path: 'trips',
+        loadComponent: () =>
+          import('./features/trips/trips.component').then((m) => m.TripsComponent),
       },
       {
         path: '',
