@@ -1,5 +1,12 @@
 import { Component, signal, computed } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl, ValidatorFn } from '@angular/forms';
+import {
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+  AbstractControl,
+  ValidatorFn,
+} from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
@@ -10,36 +17,13 @@ import { CardModule } from 'primeng/card';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
-import { RadioButtonModule } from 'primeng/radiobutton';
 import { SelectModule } from 'primeng/select';
 import { DatePickerModule } from 'primeng/datepicker';
 import { MessageModule } from 'primeng/message';
 import { Tooltip } from 'primeng/tooltip';
+import { Distributor, Option } from '../../core/models/distributor';
 
-interface Distributor {
-  id: number;
-  fullName: string;
-  firstName: string;
-  middleName?: string;
-  lastName: string;
-  idNumber: string;
-  phone: string;
-  email: string;
-  role: 'driver' | 'sales_person';
-  carAssigned: string;
-  routesAssigned: string[];
-  idFront: string;
-  idBack: string;
-  profilePicture: string;
-  status: 'active' | 'inactive';
-  dateJoined: Date;
-  dateLeft?: Date;
-}
 
-interface Option {
-  label: string;
-  value: string;
-}
 
 @Component({
   selector: 'app-distributors',
@@ -57,7 +41,6 @@ interface Option {
     CardModule,
     ConfirmDialogModule,
     ToastModule,
-    RadioButtonModule,
     MessageModule,
     Tooltip,
   ],
@@ -73,7 +56,7 @@ export class DistributorsComponent {
       middleName: 'A',
       lastName: 'Doe',
       idNumber: '12345678',
-      phone: '0700123 456',
+      phone: '0700123456',
       email: 'john.doe@bakingpos.com',
       role: 'driver',
       carAssigned: 'mazda-kck-9039',
@@ -81,18 +64,16 @@ export class DistributorsComponent {
       idFront: 'idFrontSample.jpeg',
       idBack: 'idBackSample.png',
       profilePicture: 'jomo.jpeg',
-      status: 'active' as const,
+      status: 'active',
       dateJoined: new Date('2025-01-15'),
-      dateLeft: undefined
     },
     {
       id: 2,
       fullName: 'Jane Smith',
       firstName: 'Jane',
-      middleName: undefined,
       lastName: 'Smith',
       idNumber: '87654321',
-      phone: '0711789 012',
+      phone: '0711789012',
       email: 'jane.smith@bakingpos.com',
       role: 'sales_person',
       carAssigned: 'mazda-kdb-9045',
@@ -100,49 +81,46 @@ export class DistributorsComponent {
       idFront: 'idFrontSample.jpeg',
       idBack: 'idBackSample.png',
       profilePicture: 'jomo.jpeg',
-      status: 'inactive' as const,
+      status: 'inactive',
       dateJoined: new Date('2025-02-20'),
-      dateLeft: new Date('2025-10-01')
-    }
+      dateLeft: new Date('2025-10-01'),
+    },
   ]);
 
+  visibleDialog = signal(false);
+  isEditing = signal(false);
   selectedDistributor = signal<Distributor | null>(null);
-  visibleDialog = signal<boolean>(false);
-  isEditing = signal<boolean>(false);
-  visibleImageModal: boolean = false;
+
+  visibleImageModal = false;
+  selectedImageUrl = signal('');
 
   distributorForm: FormGroup;
-  private fileMap = new Map<string, { file: File | null; url: string | null }>();  
 
-selectedImageUrl = signal<string>('');  
+  // Map to hold file + preview URL (used for both new uploads and existing images)
+  private fileMap = new Map<string, { file: File | null; url: string | null }>();
 
   roleOptions: Option[] = [
     { label: 'Driver', value: 'driver' },
-    { label: 'Sales Person', value: 'sales_person' }
+    { label: 'Sales Person', value: 'sales_person' },
   ];
 
   carOptions: Option[] = [
     { label: 'Mazda - KCK 9039', value: 'mazda-kck-9039' },
     { label: 'Mazda - KDB 9045', value: 'mazda-kdb-9045' },
-    { label: 'Probox - KCB 9043', value: 'probox-kcb-9043' }
+    { label: 'Probox - KCB 9043', value: 'probox-kcb-9043' },
   ];
 
   routeOptions: Option[] = [
     { label: 'Mariakani', value: 'mariakani' },
     { label: 'Mombasa', value: 'mombasa' },
     { label: 'Kilifi', value: 'kilifi' },
-    { label: 'Lamu', value: 'lamu' }
+    { label: 'Lamu', value: 'lamu' },
   ];
 
   statusOptions = [
     { label: 'Active', value: 'active' },
-    { label: 'Inactive', value: 'inactive' }
+    { label: 'Inactive', value: 'inactive' },
   ];
-
-  status = [
-    { label: 'Active', value: 'active' },
-    { label: 'Inactive', value: 'inactive' }
-  ]
 
   constructor(
     private fb: FormBuilder,
@@ -151,7 +129,7 @@ selectedImageUrl = signal<string>('');
   ) {
     this.distributorForm = this.fb.group({
       firstName: ['', [Validators.required, Validators.minLength(2)]],
-      middleName: ['', [Validators.minLength(2)]],
+      middleName: [''],
       lastName: ['', [Validators.required, Validators.minLength(2)]],
       idNumber: ['', [Validators.required, Validators.pattern(/^\d{8}$/)]],
       phone: ['', [Validators.required, Validators.pattern(/^0\d{9}$/)]],
@@ -159,40 +137,48 @@ selectedImageUrl = signal<string>('');
       role: ['', Validators.required],
       carAssigned: ['', Validators.required],
       routesAssigned: [[], [this.minLengthArrayValidator(1)]],
+      status: ['active', Validators.required],
+      dateJoined: [new Date(), Validators.required],
+      dateLeft: [null],
+
+      // These hold filenames only (for validation + fallback)
       idFront: ['', Validators.required],
       idBack: ['', Validators.required],
       profilePicture: ['', Validators.required],
-      status: ['', Validators.required],
-      dateJoined: [new Date(), Validators.required],
-      dateLeft: ['']
     });
   }
 
+  // Helper: check if control is invalid and touched/dirty
   isInvalid(controlName: string): boolean {
-  const control = this.distributorForm.get(controlName);
-  return !!control && (control.invalid && (control.dirty || control.touched));
-}
+    const control = this.distributorForm.get(controlName);
+    return !!control && control.invalid && (control.dirty || control.touched);
+  }
 
-getErrorMessage(controlName: string): string {
-  const control = this.distributorForm.get(controlName);
-  if (control?.errors?.['required']) return 'This field is required.';
-  if (control?.errors?.['email']) return 'Please enter a valid email.';
-  if (control?.errors?.['minlength']) return 'Minimum length is 2 characters.';
-  if (control?.errors?.['pattern']) return 'Invalid format.';
-  if (controlName === 'routesAssigned' && control?.errors?.['minlength']) return 'At least one route is required.';
-  return '';
-}
-
+  // Custom validator for multi-select (at least 1 item)
   minLengthArrayValidator(min: number): ValidatorFn {
-    return (control: AbstractControl): { [key: string]: any } | null => {
-      return control.value.length >= min ? null : { minlength: { requiredLength: min, actualLength: control.value.length } };
+    return (control: AbstractControl) => {
+      return Array.isArray(control.value) && control.value.length >= min
+        ? null
+        : { minlength: true };
     };
   }
 
+  // Full name computed for table
+  getFullName = computed(
+    () =>
+      (d: Distributor): string =>
+        `${d.firstName} ${d.middleName ? d.middleName + ' ' : ''}${d.lastName}`
+  );
+
+  // Open dialog — Add or Edit
   showDialog(distributor?: Distributor): void {
+    this.distributorForm.reset();
+    this.fileMap.clear(); // Always start fresh
+
     if (distributor) {
       this.isEditing.set(true);
       this.selectedDistributor.set(distributor);
+
       this.distributorForm.patchValue({
         firstName: distributor.firstName,
         middleName: distributor.middleName || '',
@@ -202,13 +188,21 @@ getErrorMessage(controlName: string): string {
         email: distributor.email,
         role: distributor.role,
         carAssigned: distributor.carAssigned,
-        routesAssigned: distributor.routesAssigned,
+        routesAssigned: distributor.routesAssigned || [],
+        status: distributor.status,
+        dateJoined: distributor.dateJoined,
+        dateLeft: distributor.dateLeft || null,
         idFront: distributor.idFront,
         idBack: distributor.idBack,
         profilePicture: distributor.profilePicture,
-        status: distributor.status,
-        dateJoined: distributor.dateJoined,
-        dateLeft: distributor.dateLeft || ''
+      });
+
+      // Pre-load existing images into preview map
+      this.fileMap.set('idFront', { file: null, url: `/assets/img/${distributor.idFront}` });
+      this.fileMap.set('idBack', { file: null, url: `/assets/img/${distributor.idBack}` });
+      this.fileMap.set('profilePicture', {
+        file: null,
+        url: `/assets/img/${distributor.profilePicture}`,
       });
     } else {
       this.isEditing.set(false);
@@ -223,135 +217,143 @@ getErrorMessage(controlName: string): string {
         role: '',
         carAssigned: '',
         routesAssigned: [],
+        status: 'active',
+        dateJoined: new Date(),
+        dateLeft: null,
         idFront: '',
         idBack: '',
         profilePicture: '',
-        status: 'active',
-        dateJoined: new Date(),
-        dateLeft: ''
       });
     }
+
     this.visibleDialog.set(true);
   }
 
   hideDialog(): void {
     this.visibleDialog.set(false);
     this.distributorForm.reset();
+    this.fileMap.clear();
     this.isEditing.set(false);
     this.selectedDistributor.set(null);
   }
 
-onFileChange(event: any, controlName: string): void {
-  const file = event.target?.files[0];
-  if (file) {
-    const url = URL.createObjectURL(file);
-    this.fileMap.set(controlName, { file, url });
-    this.distributorForm.get(controlName)?.setValue(file.name);
-  } else {
+  // File selected → store file + create object URL
+  onFileChange(event: Event, controlName: string): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+
+    if (file) {
+      const url = URL.createObjectURL(file);
+      this.fileMap.set(controlName, { file, url });
+      this.distributorForm.get(controlName)?.setValue(file.name);
+    }
+  }
+
+  // Clear uploaded image
+  onClearImage(controlName: string): void {
     this.fileMap.set(controlName, { file: null, url: null });
     this.distributorForm.get(controlName)?.setValue('');
-  }
-}
-
-getPreviewUrl(controlName: string): string | null {
-  const fromMap = this.fileMap.get(controlName)?.url;
-  if (fromMap) return fromMap;
-
-  const controlValue = this.distributorForm.get(controlName)?.value;
-  if (controlValue) {
-    // adjust if you store full URLs instead of just file names
-    return '/assets/img/' + controlValue;
+    const input = document.getElementById(controlName) as HTMLInputElement;
+    if (input) input.value = '';
   }
 
-  return null;
-}
+  // Return preview URL (new upload OR existing image)
+  getPreviewUrl(controlName: string): string | null {
+    // 1. New upload → object URL
+    const uploaded = this.fileMap.get(controlName);
+    if (uploaded?.url) return uploaded.url;
 
+    // 2. Existing saved image → static asset path
+    const fileName = this.distributorForm.get(controlName)?.value;
+    return fileName ? `/assets/img/${fileName}` : null;
+  }
 
-onClearImage(controlName: string): void {
-  this.fileMap.set(controlName, { file: null, url: null });
-  this.distributorForm.get(controlName)?.setValue('');
-  // Reset file input
-  const input = document.getElementById(controlName) as HTMLInputElement;
-  if (input) input.value = '';
-}
+  // Image viewer modal
+  viewImage(url: string): void {
+    this.selectedImageUrl.set(url);
+    this.visibleImageModal = true;
+  }
 
-viewImage(url: string): void {
-  this.selectedImageUrl.set(url);
-  this.visibleImageModal = true;
-}
-
-closeImageModal(): void {
-  this.selectedImageUrl.set('');
-}
-
+  // Save (Add or Update)
   saveDistributor(): void {
     if (this.distributorForm.invalid) {
-      console.log('Form is invalid');
-      this.messageService.add({ severity: 'error', summary: 'Validation Error', detail: 'Please fill all required fields correctly.' });
       this.distributorForm.markAllAsTouched();
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Validation Error',
+        detail: 'Please correct the errors in the form.',
+      });
       return;
     }
 
     const formValue = this.distributorForm.value;
-    const newDistributor: Distributor = {
-      ...formValue,
-      id: this.isEditing() ? this.selectedDistributor()!.id : this.distributors().length + 1,
+
+    const distributor: Distributor = {
+      id: this.isEditing() ? this.selectedDistributor()!.id : Date.now(),
       firstName: formValue.firstName,
-      middleName: formValue.middleName || undefined,
+      middleName: formValue.middleName?.trim() || undefined,
       lastName: formValue.lastName,
+      fullName: this.getFullName()(formValue as any), // reuse computed logic
       idNumber: formValue.idNumber,
       phone: formValue.phone,
       email: formValue.email,
-      role: formValue.role as 'driver' | 'sales_person',
+      role: formValue.role,
       carAssigned: formValue.carAssigned,
       routesAssigned: formValue.routesAssigned,
-      idFront: formValue.idFront,
-      idBack: formValue.idBack,
-      profilePicture: formValue.profilePicture,
-      status: formValue.status as 'active' | 'inactive',
+      status: formValue.status,
       dateJoined: new Date(formValue.dateJoined),
-      dateLeft: formValue.dateLeft ? new Date(formValue.dateLeft) : undefined
+      dateLeft: formValue.dateLeft ? new Date(formValue.dateLeft) : undefined,
+
+      // Use new filename if uploaded file name, otherwise keep old one
+      idFront:
+        this.fileMap.get('idFront')?.file?.name || formValue.idFront,
+      idBack:
+        this.fileMap.get('idBack')?.file?.name || formValue.idBack,
+      profilePicture:
+        this.fileMap.get('profilePicture')?.file?.name ||
+        formValue.profilePicture,
     };
-    // 🔹 Pre-populate preview URLs for existing files
-    this.fileMap.set('idFront', {
-      file: null,
-      url: '/assets/img/' + newDistributor.idFront
-    });
-    this.fileMap.set('idBack', {
-      file: null,
-      url: '/assets/img/' + newDistributor.idBack
-    });
-    this.fileMap.set('profilePicture', {
-      file: null,
-      url: '/assets/img/' + newDistributor.profilePicture
-    });
 
     if (this.isEditing()) {
-      this.distributors.update(distributors => 
-        distributors.map(d => d.id === newDistributor.id ? newDistributor : d)
+      this.distributors.update((list) =>
+        list.map((d) => (d.id === distributor.id ? distributor : d))
       );
-      this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Distributor updated successfully.' });
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Success',
+        detail: 'Distributor updated successfully',
+      });
     } else {
-      this.distributors.update(distributors => [...distributors, newDistributor]);
-      this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Distributor added successfully.' });
+      this.distributors.update((list) => [...list, distributor]);
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Success',
+        detail: 'Distributor added successfully',
+      });
     }
 
     this.hideDialog();
   }
 
+  editDistributor(distributor: Distributor): void {
+    this.showDialog(distributor);
+  }
+
   deleteDistributor(distributor: Distributor): void {
     this.confirmationService.confirm({
-      message: `Are you sure you want to delete ${distributor.firstName} ${distributor.lastName}?`,
+      message: `Delete ${distributor.firstName} ${distributor.lastName}? This action cannot be undone.`,
       header: 'Confirm Delete',
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
-        this.distributors.update(distributors => distributors.filter(d => d.id !== distributor.id));
-        this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Distributor deleted successfully.' });
-      }
+        this.distributors.update((list) =>
+          list.filter((d) => d.id !== distributor.id)
+        );
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Deleted',
+          detail: 'Distributor removed',
+        });
+      },
     });
-  }
-
-  editDistributor(distributor: Distributor): void {
-    this.showDialog(distributor);
   }
 }
