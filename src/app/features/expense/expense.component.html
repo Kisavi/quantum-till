@@ -1,0 +1,144 @@
+<div class="card p-6">
+  <div class="flex justify-between items-center mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-800">Expenses</h1>
+      <p class="text-gray-600">Submit and approve daily expenses</p>
+    </div>
+    <div class="flex gap-6 items-center">
+      <div class="text-center">
+        <p class="text-sm text-gray-600">Pending Approval</p>
+        <p class="text-xl font-bold text-yellow-600">KES {{ totalPending | number }}</p>
+      </div>
+      <div class="text-center">
+        <p class="text-sm text-gray-600">Approved</p>
+        <p class="text-xl font-bold text-green-600">KES {{ totalApproved | number }}</p>
+      </div>
+      <p-button label="New Expense" icon="pi pi-plus" severity="success" (onClick)="showDialog()" class="p-button-rounded"></p-button>
+    </div>
+  </div>
+
+  <p-card>
+    <p-table [value]="expenses" stripedRows showGridlines [scrollable]="true" scrollHeight="flex">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Date</th>
+          <th>User</th>
+          <th>Reason</th>
+          <th>Amount</th>
+          <th>Receipt</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-expense>
+        <tr class="hover:bg-gray-50">
+          <td>{{ expense.createdAt | date:'dd/MM HH:mm' }}</td>
+          <td class="font-medium">{{ expense.userName }}</td>
+          <td>
+            {{ expense.reason }}
+            <span *ngIf="expense.otherReason" class="text-gray-500">({{ expense.otherReason }})</span>
+          </td>
+          <td class="text-right font-semibold">KES {{ expense.amount | number }}</td>
+          <td>
+            <img [src]="expense.attachmentUrl" class="w-12 h-12 object-cover rounded cursor-pointer border"
+                 (click)="viewReceipt(expense.attachmentUrl)" />
+          </td>
+          <td>
+            <span [ngClass]="getStatusClass(expense.status)" class="px-3 py-1 rounded-full text-xs font-medium">
+              {{ expense.status }}
+            </span>
+          </td>
+          <td>
+            <div class="flex gap-2" *ngIf="expense.status === 'PENDING'">
+              <p-button icon="pi pi-check" severity="success" size="small" rounded pTooltip="Approve"
+                        (onClick)="approve(expense.id)"></p-button>
+              <p-button icon="pi pi-times" severity="danger" size="small" rounded pTooltip="Reject"
+                        (onClick)="showRejectDialog(expense.id)"></p-button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr><td colspan="7" class="text-center py-8 text-gray-500">No expenses recorded yet</td></tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+
+  <!-- Submit Expense Dialog -->
+  <p-dialog header="Submit New Expense" [(visible)]="visibleDialog" [modal]="true" [style]="{width:'38rem'}">
+    <form [formGroup]="expenseForm" (ngSubmit)="submitExpense()" class="space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div class="flex flex-col gap-2">
+          <label class="font-medium">Reason <span class="text-red-600">*</span></label>
+          <p-select [options]="reasons" formControlName="reason" placeholder="Select reason" class="w-full"></p-select>
+          <input *ngIf="expenseForm.value.reason === 'OTHER'" pInputText formControlName="otherReason"
+                 placeholder="Enter custom reason" class="mt-2" />
+        </div>
+        <div class="flex flex-col gap-2">
+          <label class="font-medium">Amount (KES) <span class="text-red-600">*</span></label>
+          <p-inputNumber formControlName="amount" [min]="1" [showButtons]="true" class="w-full"></p-inputNumber>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <label class="font-medium">Receipt Photo <span class="text-red-600">*</span></label>
+        <input type="file" accept="image/*" (change)="onFileChange($event)" class="w-full p-2 border rounded" />
+        <img *ngIf="expenseForm.value.attachmentBase64" [src]="getPreview()"
+             class="w-full max-w-sm h-64 object-cover rounded mt-3 border" alt="Receipt preview" />
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <label class="font-medium">Notes (optional)</label>
+        <textarea pInputTextarea formControlName="notes" rows="3" class="w-full"></textarea>
+      </div>
+    </form>
+
+    <ng-template pTemplate="footer">
+      <p-button label="Cancel" severity="secondary" (onClick)="visibleDialog=false" class="p-button-text"></p-button>
+      <p-button label="Submit for Approval" icon="pi pi-send" severity="success"
+                (onClick)="submitExpense()"
+                [disabled]="expenseForm.invalid || !expenseForm.value.attachmentBase64"></p-button>
+    </ng-template>
+  </p-dialog>
+
+  <!-- Approve Confirmation -->
+  <p-dialog header="Approve Expense?" [(visible)]="visibleApproveConfirm" [modal]="true" [style]="{width:'28rem'}">
+    <p class="text-gray-700">This expense will be marked as <strong>APPROVED</strong> and become payable.</p>
+    <p class="mt-3 font-semibold">Amount: KES {{ getExpenseAmount(expenseToApprove) | number }}</p>
+
+    <ng-template pTemplate="footer">
+      <p-button label="Cancel" severity="secondary" (onClick)="visibleApproveConfirm=false" class="p-button-text"></p-button>
+      <p-button label="Yes, Approve" icon="pi pi-check" severity="success" (onClick)="confirmApprove()"></p-button>
+    </ng-template>
+  </p-dialog>
+
+  <!-- Reject with Reason -->
+  <p-dialog header="Reject Expense" [(visible)]="visibleRejectConfirm" [modal]="true" [style]="{width:'34rem'}">
+    <form [formGroup]="rejectForm" (ngSubmit)="confirmReject()">
+      <p class="text-gray-700 mb-4">Please provide a reason for rejecting this expense:</p>
+      <p class="font-semibold mb-4">Amount: KES {{ getExpenseAmount(expenseToReject) | number }}</p>
+
+      <div class="flex flex-col gap-2">
+        <label class="font-medium">Rejection Reason <span class="text-red-600">*</span></label>
+        <textarea pInputTextarea formControlName="reason" rows="5"
+                  placeholder="e.g. Receipt is unclear, amount seems high, missing details..."
+                  class="w-full"></textarea>
+      </div>
+    </form>
+
+    <ng-template pTemplate="footer">
+      <p-button label="Cancel" severity="secondary" (onClick)="visibleRejectConfirm=false" class="p-button-text"></p-button>
+      <p-button label="Reject Expense" icon="pi pi-times" severity="danger"
+                (onClick)="confirmReject()" [disabled]="rejectForm.invalid"></p-button>
+    </ng-template>
+  </p-dialog>
+
+  <!-- Receipt Viewer -->
+  <p-dialog [(visible)]="visibleImage" [modal]="true" header="Receipt Photo" [style]="{width:'90vw', maxWidth:'800px'}">
+    <div class="flex justify-center">
+      <img [src]="selectedImage" class="max-w-full max-h-[80vh] object-contain rounded" />
+    </div>
+  </p-dialog>
+
+  <p-toast></p-toast>
+</div>
