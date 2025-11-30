@@ -31,6 +31,11 @@ export const routes: Routes = [
           import('./features/trips/trips.component').then((m) => m.TripsComponent),
       },
       {
+        path: 'assets',
+        loadComponent: () =>
+          import('./features/assets/assets.component').then((m) => m.AssetsComponent),
+      },
+      {
         path: '',
         redirectTo: 'dashboard',
         pathMatch: 'full',

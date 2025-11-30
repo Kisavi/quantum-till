@@ -1,0 +1,220 @@
+<div class="card p-6">
+  <!-- Header -->
+  <div class="flex justify-between items-center mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-800">Assets</h1>
+      <p class="text-gray-600">Manage all bakery equipment, vehicles, and property</p>
+    </div>
+    <div class="flex gap-4 items-center">
+      <div class="text-right">
+        <p class="text-sm text-gray-600">Total Value</p>
+        <p class="text-2xl font-bold text-blue-600">KES {{ totalValue | number }}</p>
+      </div>
+      <p-button 
+        label="Add Asset" 
+        icon="pi pi-plus" 
+        severity="success" 
+        (onClick)="showDialog()" 
+        class="p-button-rounded">
+      </p-button>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <p-card>
+    <p-table [value]="assets" stripedRows showGridlines [scrollable]="true" scrollHeight="flex">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Photo</th>
+          <th>Name</th>
+          <th>Category</th>
+          <th>Brand/Model</th>
+          <th>Purchase Date</th>
+          <th>Cost (KES)</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-asset>
+        <tr class="hover:bg-gray-50">
+          <td>
+            <img 
+              [src]="asset.photoUrl"
+              class="w-16 h-16 object-cover rounded cursor-pointer border"
+              (click)="viewImage(asset.photoUrl)" />
+          </td>
+          <td class="font-medium">{{ asset.name }}</td>
+          <td>{{ asset.category }}</td>
+          <td>{{ asset.brand || '-' }} {{ asset.model ? '/' + asset.model : '' }}</td>
+          <td>{{ asset.purchaseDate | date:'dd/MM/yyyy' }}</td>
+          <td class="text-right font-semibold">{{ asset.purchaseCost | number }}</td>
+          <td>
+            <span [ngClass]="{
+              'bg-green-100 text-green-800': asset.status === 'Operational',
+              'bg-yellow-100 text-yellow-800': asset.status === 'Under Repair',
+              'bg-red-100 text-red-800': asset.status === 'Faulty',
+              'bg-gray-100 text-gray-800': asset.status === 'Disposed'
+            }" class="px-3 py-1 rounded-full text-xs font-medium">
+              {{ asset.status }}
+            </span>
+          </td>
+          <td>
+            <div class="flex gap-2">
+              <p-button icon="pi pi-pencil" severity="info" size="small" rounded (onClick)="showDialog(asset)"></p-button>
+              <p-button icon="pi pi-trash" severity="danger" size="small" rounded (onClick)="deleteAsset(asset)"></p-button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="8" class="text-center py-8 text-gray-500">
+            No assets recorded yet. Click "Add Asset" to begin!
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+
+  <!-- Add/Edit Dialog -->
+  <p-dialog 
+    [(visible)]="visibleDialog" 
+    [header]="isEditing ? 'Edit Asset' : 'Add New Asset'" 
+    [modal]="true" 
+    [style]="{ width: '40rem' }"
+    styleClass="overflow-auto">
+
+    <form [formGroup]="assetForm" (ngSubmit)="saveAsset()" class="space-y-6">
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <!-- Name -->
+        <div class="flex flex-col gap-2">
+          <label class="font-medium">Name <span class="text-red-600">*</span></label>
+          <input pInputText formControlName="name" placeholder="e.g. Gas Oven #2" class="w-full" />
+        </div>
+
+        <!-- Category -->
+        <div class="flex flex-col gap-2">
+          <label class="font-medium">Category <span class="text-red-600">*</span></label>
+          <p-select 
+            [options]="categories" 
+            formControlName="category" 
+            optionLabel="label" 
+            optionValue="value"
+            placeholder="Select category"
+            class="w-full">
+          </p-select>
+        </div>
+
+        <!-- Brand -->
+        <div class="flex flex-col gap-2">
+          <label class="font-medium">Brand</label>
+          <input pInputText formControlName="brand" placeholder="e.g. Sinmag" class="w-full" />
+        </div>
+
+        <!-- Model -->
+        <div class="flex flex-col gap-2">
+          <label class="font-medium">Model</label>
+          <input pInputText formControlName="model" placeholder="e.g. 60kg Spiral" class="w-full" />
+        </div>
+
+        <!-- Purchase Date -->
+        <div class="flex flex-col gap-2">
+          <label class="font-medium">Purchase Date <span class="text-red-600">*</span></label>
+          <p-datepicker 
+            formControlName="purchaseDate" 
+            [showIcon]="true" 
+            dateFormat="dd/mm/yy"
+            class="w-full">
+          </p-datepicker>
+        </div>
+
+        <!-- Cost -->
+        <div class="flex flex-col gap-2">
+          <label class="font-medium">Purchase Cost (KES) <span class="text-red-600">*</span></label>
+          <p-inputNumber 
+            formControlName="purchaseCost" 
+            mode="decimal" 
+            [min]="1"
+            [showButtons]="true"
+            class="w-full">
+          </p-inputNumber>
+        </div>
+
+        <!-- Status -->
+        <div class="flex flex-col gap-2">
+          <label class="font-medium">Status <span class="text-red-600">*</span></label>
+          <p-select 
+            [options]="[
+              { label: 'Operational', value: 'Operational' },
+              { label: 'Under Repair', value: 'Under Repair' },
+              { label: 'Faulty', value: 'Faulty' },
+              { label: 'Disposed', value: 'Disposed' }
+            ]" 
+            formControlName="status" 
+            placeholder="Select status"
+            class="w-full">
+          </p-select>
+        </div>
+
+        <!-- Photo Upload -->
+        <div class="flex flex-col gap-2">
+          <label class="font-medium">Photo</label>
+          <input 
+            type="file" 
+            accept="image/*" 
+            (change)="onFileChange($event)" 
+            class="w-full p-2 border rounded" />
+          
+          <img 
+            *ngIf="assetForm.value.photoBase64 || editingAsset?.photoUrl"
+            [src]="getPreviewUrl()" 
+            class="w-full max-w-xs h-48 object-cover rounded mt-3 border" 
+            alt="Preview" />
+        </div>
+      </div>
+
+      <!-- Notes - Always Visible -->
+      <div class="flex flex-col gap-2 col-span-1 md:col-span-2">
+        <label class="font-medium">Notes</label>
+        <textarea 
+          pInputTextarea 
+          formControlName="notes" 
+          rows="4" 
+          placeholder="e.g. Door seal leaking, needs repair..."
+          class="w-full">
+        </textarea>
+      </div>
+
+    </form>
+
+    <ng-template pTemplate="footer">
+      <div class="flex justify-end gap-3">
+        <p-button 
+          label="Cancel" 
+          severity="secondary" 
+          (onClick)="visibleDialog = false" 
+          class="p-button-text">
+        </p-button>
+        <p-button 
+          label="Save Asset" 
+          icon="pi pi-check" 
+          severity="success" 
+          (onClick)="saveAsset()" 
+          [disabled]="assetForm.invalid">
+        </p-button>
+      </div>
+    </ng-template>
+  </p-dialog>
+
+  <!-- Image Viewer Modal -->
+  <p-dialog [(visible)]="visibleImageModal" [modal]="true" header="Asset Photo" [style]="{ width: '90vw', maxWidth: '800px' }">
+    <div class="flex justify-center">
+      <img [src]="selectedImageUrl" class="max-w-full max-h-[70vh] object-contain rounded" />
+    </div>
+  </p-dialog>
+
+  <p-toast></p-toast>
+</div>
