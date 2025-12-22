@@ -35,7 +35,7 @@ export class LoginComponent {
 
     try {
       await signInWithEmailAndPassword(this.auth, email, password);
-      this.router.navigate(['/dashboard']);
+      this.router.navigate(['/user-validation']);
     } catch (e) {
       if (e instanceof FirebaseError && e.code === 'auth/invalid-credential') {
         this.errorMessage = 'Invalid email or password!';

@@ -10,6 +10,14 @@ export const routes: Routes = [
     loadChildren: () => import('./features/auth/auth.routes').then((m) => m.routes),
   },
   {
+    path: 'user-validation',
+    data: { authGuardPipe: () => redirectUnauthorizedTo(['/auth']) },
+    loadComponent: () =>
+      import('./features/user-validation/user-validation.component').then(
+        (m) => m.UserValidationComponent,
+      ),
+  },
+  {
     path: '',
     canActivate: [AuthGuard],
     data: { authGuardPipe: () => redirectUnauthorizedTo(['/auth']) },
@@ -23,7 +31,9 @@ export const routes: Routes = [
       {
         path: 'distributors',
         loadComponent: () =>
-          import('./features/distributors/distributors.component').then((m) => m.DistributorsComponent), 
+          import('./features/distributors/distributors.component').then(
+            (m) => m.DistributorsComponent,
+          ),
       },
       {
         path: 'trips',

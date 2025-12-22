@@ -5,5 +5,6 @@ export interface User extends FirebaseUser {
   userId: string;
   role: Role;
   active: boolean;
+  valid: boolean;
   rating: number;
 }
