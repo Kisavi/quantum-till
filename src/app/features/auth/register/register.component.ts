@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { FirebaseError } from '@angular/fire/app';
-import { Auth, createUserWithEmailAndPassword } from '@angular/fire/auth';
+import { Auth, createUserWithEmailAndPassword, updateProfile, User } from '@angular/fire/auth';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { ButtonDirective } from 'primeng/button';
@@ -32,7 +32,12 @@ export class RegisterComponent {
 
     try {
       await createUserWithEmailAndPassword(this.auth, email, password);
-      // this.auth.updateCurrentUser({ displayName }); //TODO: Set user's display name
+
+      if (this.auth.currentUser) {
+        // Update user's display name
+        await updateProfile(this.auth.currentUser, { displayName });
+      }
+
       this.router.navigate(['/']);
     } catch (e) {
       const error = e as FirebaseError;
