@@ -1,0 +1,272 @@
+<div class="card p-6">
+  <!-- Header -->
+  <div class="flex justify-between items-center mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-800">Inventory</h1>
+      <p class="text-gray-600">Track raw materials and stock levels</p>
+    </div>
+    <div class="flex gap-4 items-center">
+      <p-button label="Add Stock" icon="pi pi-plus" severity="success" (onClick)="showDialog()"
+        class="p-button-rounded"></p-button>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <p-tabs value="0">
+    <p-tablist>
+      <p-tab value="0">Current Stock</p-tab>
+      <p-tab value="1">Purchase History</p-tab>
+    </p-tablist>
+
+    <p-tabpanels>
+      <!-- Current Stock Tab -->
+      <p-tabpanel value="0">
+        <p-card class="mt-4">
+          <p-table [value]="inventory" [loading]="isLoading" stripedRows showGridlines [scrollable]="true"
+            scrollHeight="flex">
+            <ng-template pTemplate="header">
+              <tr>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Stock Level</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </ng-template>
+
+            <ng-template pTemplate="body" let-item>
+              <tr class="hover:bg-gray-50" [ngClass]="{
+                  'bg-orange-50': item.status === 'Low Stock',
+                  'bg-red-50': item.status === 'Out of Stock'
+                }">
+                <td class="font-medium">{{ item.item.name }}</td>
+                <td>{{ item.categoryName }}</td>
+                <td class="font-semibold">
+                  {{ item.currentStock }}
+                </td>
+                <td>
+                  <span class="px-3 py-1 rounded-full text-xs font-medium" [ngClass]="getStatusClass(item.status)">
+                    {{ item.status }}
+                  </span>
+                </td>
+                <td>
+                   <p-button icon="pi pi-trash" severity="danger" size="small" rounded
+                      (onClick)="confirmDeleteItem(item)"></p-button>
+                </td>
+
+              </tr>
+            </ng-template>
+
+
+            <!-- Loading -->
+            <ng-template pTemplate="loadingbody">
+              <tr>
+                <td colspan="8" class="text-center py-20">
+                  <div class="flex flex-col items-center gap-4">
+                    <p-progressSpinner styleClass="w-16 h-16"></p-progressSpinner>
+                    <p class="text-lg text-gray-600">Loading current stock...</p>
+                  </div>
+                </td>
+              </tr>
+            </ng-template>
+
+            <!-- Empty -->
+            <ng-template pTemplate="emptymessage">
+              <tr>
+                <td colspan="8" class="text-center py-20">
+                  <div class="flex flex-col items-center gap-6 text-gray-500">
+                    <i class="pi pi-box text-8xl opacity-30"></i>
+                    <div class="text-center">
+                      <p class="text font-medium mb-2">No items in stock</p>
+                      <p class="text-lg">Click "Add Stock" to begin</p>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </p-card>
+      </p-tabpanel>
+
+
+      <!-- Purchase History Tab -->
+      <p-tabpanel value="1">
+        <p-card class="mt-4">
+          <p-table [value]="purchaseHistory" stripedRows showGridlines [scrollable]="true" scrollHeight="flex">
+            <ng-template pTemplate="header">
+              <tr>
+                <th>Date</th>
+                <th>Raw Material</th>
+                <th>Category</th>
+                <th>Base Unit</th>
+                <th>Unit Size</th>
+                <th>Quantity Added</th>
+                <th>Price per Unit</th>
+                <th>Total Cost</th>
+                <th>Supplier</th>
+                <th>Actions</th>
+              </tr>
+            </ng-template>
+
+            <ng-template pTemplate="body" let-entry>
+              <!-- <pre>{{ entry | json }}</pre> -->
+              <tr class="hover:bg-gray-50">
+                <td>{{ getDateInMillis(entry.purchaseDate) | date:'dd/MM/yyyy' }}</td>
+                <td class="font-medium">{{ entry.itemName }}</td>
+                <td>{{ entry.categoryName }}</td>
+                <td>{{ entry.baseUnit }}</td>
+                <td>{{ entry.unitSize }}</td>
+
+                <td>{{ getQuantityAdded(entry) }}</td>
+                <td>KES {{ entry.purchasePrice | number }}</td>
+                <td class="text-right font-semibold">KES {{ getTotalCost(entry) | number }}</td>
+                <td>
+                  <div>{{ entry.supplierName }}</div>
+                  <div class="text-sm text-gray-600">{{ entry.supplierContact || '-' }}</div>
+                </td>
+
+                <td>
+                  <div class="flex gap-2">
+                    <p-button icon="pi pi-pencil" severity="info" size="small" rounded
+                      (onClick)="showDialog(entry)"></p-button>
+                    <p-button icon="pi pi-trash" severity="danger" size="small" rounded
+                      (onClick)="confirmDeleteEntry(entry)"></p-button>
+                  </div>
+
+
+                </td>
+              </tr>
+            </ng-template>
+
+            <!-- Empty -->
+            <ng-template pTemplate="emptymessage">
+              <tr>
+                <td colspan="10" class="text-center py-20">
+                  <div class="flex flex-col items-center gap-6 text-gray-500">
+                    <i class="pi pi-history text-8xl opacity-30"></i>
+                    <p class="text font-medium">No purchase history yet</p>
+                  </div>
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </p-card>
+      </p-tabpanel>
+    </p-tabpanels>
+  </p-tabs>
+
+  <!-- Add Stock Dialog -->
+  <p-dialog header="{{ isEditingEntry ? 'Edit Stock Entry' : 'Add Stock Entry' }}" [(visible)]="visibleDialog" [modal]="true" [style]="{width:'50rem'}">
+    <form [formGroup]="inventoryForm" (ngSubmit)="saveInventory()" class="space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div class="flex flex-col gap-2">
+          <label class="font-medium">Category <span class="text-red-600">*</span></label>
+          <p-select [options]="categoryOptions" formControlName="categoryId" optionLabel="label" optionValue="value"
+            placeholder="Select category" class="w-full"></p-select>
+        </div>
+        <div class="flex flex-col gap-2">
+          <label class="font-medium">Item <span class="text-red-600">*</span></label>
+          <p-select [options]="filteredItemOptions" formControlName="itemId" optionLabel="label" optionValue="value"
+            placeholder="Select item" class="w-full"></p-select>
+        </div>
+        <div class="flex flex-col gap-2">
+          <label class="font-medium">Quantity (purchase units) <span class="text-red-600">*</span></label>
+          <p-inputNumber formControlName="quantityPurchaseUnits" [min]="1" [showButtons]="true"
+            class="w-full"></p-inputNumber>
+        </div>
+        <div class="flex flex-col gap-2">
+          <label class="font-medium">Unit Size (base unit per purchase unit) <span class="text-red-600">*</span></label>
+          <p-inputNumber formControlName="unitSize" [min]="1" [showButtons]="true" class="w-full"></p-inputNumber>
+        </div>
+        <div class="flex flex-col gap-2">
+          <label class="font-medium">Base Unit <span class="text-red-600">*</span></label>
+          <input pInputText formControlName="baseUnit" placeholder="e.g. kg, piece" class="w-full" />
+        </div>
+        <div class="flex flex-col gap-2">
+          <label class="font-medium">Purchase Unit <span class="text-red-600">*</span></label>
+          <input pInputText formControlName="purchaseUnit" placeholder="e.g. bag, tray" class="w-full" />
+        </div>
+        <div class="flex flex-col gap-2">
+          <label class="font-medium">Price per Purchase Unit (KES) <span class="text-red-600">*</span></label>
+          <p-inputNumber formControlName="pricePerPurchaseUnit" mode="decimal" [min]="0" class="w-full"></p-inputNumber>
+        </div>
+        <div class="flex flex-col gap-2">
+          <label class="font-medium">Low Stock Threshold (in base units) <span class="text-red-600">*</span></label>
+          <p-inputNumber formControlName="lowStockThreshold" [min]="0" class="w-full"></p-inputNumber>
+        </div>
+        <div class="flex flex-col gap-2">
+          <label class="font-medium">Supplier Name</label>
+          <input pInputText formControlName="supplierName" class="w-full" />
+        </div>
+        <div class="flex flex-col gap-2">
+          <label class="font-medium">Supplier Contact</label>
+          <input pInputText formControlName="supplierContact" class="w-full" />
+        </div>
+        <div class="flex flex-col gap-2 md:col-span-2">
+          <label class="font-medium">Notes (optional)</label>
+          <textarea pInputTextarea formControlName="notes" rows="3" class="w-full"></textarea>
+        </div>
+        <div class="flex flex-col gap-2 md:col-span-2">
+          <label class="font-medium">Photo (optional)</label>
+          <input type="file" accept="image/*" (change)="onFileChange($event)" class="w-full p-2 border rounded" />
+          <img *ngIf="inventoryForm.value.photoBase64" [src]="inventoryForm.value.photoBase64"
+            class="w-full max-w-md h-64 object-cover rounded mt-3 border" />
+        </div>
+      </div>
+    </form>
+
+    <ng-template pTemplate="footer">
+      <p-button label="Cancel" severity="secondary" (onClick)="visibleDialog = false" class="p-button-text"></p-button>
+      <p-button label="{{ isEditingEntry ? 'Save Changes' : 'Add Stock' }}" icon="pi pi-check" severity="success" (onClick)="saveInventory()"
+        [disabled]="inventoryForm.invalid"></p-button>
+    </ng-template>
+  </p-dialog>
+
+  <!-- Create New Category Modal -->
+  <p-dialog header="Create New Category" [(visible)]="visibleCategoryModal" [modal]="true" [style]="{width:'28rem'}">
+    <form [formGroup]="categoryForm" (ngSubmit)="addNewCategory()">
+      <div class="flex flex-col gap-2">
+        <label class="font-medium">Category Name <span class="text-red-600">*</span></label>
+        <input pInputText formControlName="name" placeholder="e.g. Ingredient" class="w-full" />
+      </div>
+    </form>
+
+    <ng-template pTemplate="footer">
+      <p-button label="Cancel" severity="secondary" (onClick)="visibleCategoryModal = false"
+        class="p-button-text"></p-button>
+      <p-button label="Create" icon="pi pi-check" severity="success" (onClick)="addNewCategory()"
+        [disabled]="categoryForm.invalid"></p-button>
+    </ng-template>
+  </p-dialog>
+
+  <!-- Create New Item Modal -->
+  <p-dialog header="Create New Item" [(visible)]="visibleItemModal" [modal]="true" [style]="{width:'32rem'}">
+    <form [formGroup]="itemForm" (ngSubmit)="addNewItem()">
+      <div class="flex flex-col gap-2">
+        <label class="font-medium">Item Name <span class="text-red-600">*</span></label>
+        <input pInputText formControlName="name" placeholder="e.g. Wheat Flour" class="w-full" />
+      </div>
+    </form>
+
+    <ng-template pTemplate="footer">
+      <p-button label="Cancel" severity="secondary" (onClick)="visibleItemModal = false"
+        class="p-button-text"></p-button>
+      <p-button label="Create" icon="pi pi-check" severity="success" (onClick)="addNewItem()"
+        [disabled]="itemForm.invalid"></p-button>
+    </ng-template>
+  </p-dialog>
+
+  <!-- Image Viewer -->
+  <p-dialog [(visible)]="visibleImageModal" [modal]="true" header="Item Photo"
+    [style]="{width:'90vw', maxWidth:'800px'}">
+    <div class="flex justify-center">
+      <img [src]="selectedImageUrl" class="max-w-full max-h-[80vh] object-contain rounded" />
+    </div>
+  </p-dialog>
+
+  <p-confirmdialog />
+<!-- <p-button (click)="confirm1($event)" label="Save" [outlined]="true" /> -->
+<!-- <p-button (click)="confirm2($event)" label="Delete" severity="danger" [outlined]="true" /> -->
+
+  <p-toast></p-toast>
+</div>
