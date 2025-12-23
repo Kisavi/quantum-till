@@ -1,5 +1,5 @@
-import { Routes } from '@angular/router';
 import { AuthGuard, redirectLoggedInTo, redirectUnauthorizedTo } from '@angular/fire/auth-guard';
+import { Routes } from '@angular/router';
 import { MainLayoutComponent } from './core/layout/main-layout/main-layout.component';
 
 export const routes: Routes = [
@@ -49,6 +49,11 @@ export const routes: Routes = [
         path: 'expenses',
         loadComponent: () =>
           import('./features/expense/expense.component').then((m) => m.ExpenseComponent),
+      },
+      {
+        path: 'users',
+        loadComponent: () =>
+          import('./features/users/users.component').then((m) => m.UsersComponent),
       },
       {
         path: '',
