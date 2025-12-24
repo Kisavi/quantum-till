@@ -6,7 +6,7 @@
       @let currentUser = currentUser$ | async;
       <div>
         <div class="text-sm font-bold">{{ currentUser?.displayName }}</div>
-        <div class="text-xs text-gray-400">{{ currentUser?.role }}</div>
+        <div class="text-xs text-gray-400">{{ currentUser?.role?.name }}</div>
       </div>
 
       <p-avatar

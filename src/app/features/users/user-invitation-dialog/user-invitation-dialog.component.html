@@ -1,0 +1,38 @@
+<p-toast />
+<p-dialog header="Invite" [visible]="visible()" (visibleChange)="visibleChange.emit($event)">
+  <span class="p-text-secondary block mb-6">
+    Invite someone by choosing their role and entering their email below
+  </span>
+  <form [formGroup]="invitationForm">
+    <div class="mb-3">
+      <label for="email" class="font-semibold block mb-1">Role</label>
+      @let roles = roles$ | async;
+      <p-select
+        id="role"
+        [options]="roles!"
+        [loading]="!roles"
+        optionLabel="name"
+        [filter]="true"
+        filterBy="name"
+        placeholder="Select a role"
+        formControlName="role"
+        class="w-full"
+      />
+    </div>
+    <div class="mb-8">
+      <label for="email" class="font-semibold block mb-1">Email</label>
+      <input
+        pInputText
+        id="email"
+        class="w-full"
+        placeholder="Enter email"
+        autocomplete="off"
+        formControlName="email"
+      />
+    </div>
+  </form>
+  <div class="flex justify-end gap-2">
+    <p-button label="Cancel" severity="secondary" (click)="closeDialog()" />
+    <p-button label="Invite" (click)="invite()" />
+  </div>
+</p-dialog>

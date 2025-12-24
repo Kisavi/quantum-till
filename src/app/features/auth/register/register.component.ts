@@ -8,7 +8,6 @@ import { ButtonDirective } from 'primeng/button';
 import { FloatLabel } from 'primeng/floatlabel';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
-import { User } from '../../../core/models/user';
 import { UserService } from '../../../core/services/user.service';
 
 @Component({
@@ -49,14 +48,19 @@ export class RegisterComponent {
           const invitationData = invitation.data();
 
           const user = {
-            ...this.auth.currentUser,
+            uid: this.auth.currentUser.uid,
+            displayName: this.auth.currentUser.displayName,
+            email: this.auth.currentUser.email,
+            emailVerified: this.auth.currentUser.emailVerified,
+            phoneNumber: this.auth.currentUser.phoneNumber,
+            photoURL: this.auth.currentUser.photoURL,
             active: true,
             valid: true,
             rating: 0,
             role: invitationData.role,
-          } as User;
+          };
 
-          await this.userService.createUser(user); // Create user doc for the new user
+          await this.userService.createUser(this.auth.currentUser.uid, user); // Create user doc for the new user
         }
       }
 

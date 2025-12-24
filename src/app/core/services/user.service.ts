@@ -11,6 +11,7 @@ import {
   getDocs,
   query,
   QueryDocumentSnapshot,
+  setDoc,
   where,
 } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
@@ -47,8 +48,9 @@ export class UserService {
     }
   }
 
-  createUser(user: User): Promise<DocumentReference<User>> {
-    return addDoc(this.usersCollectionRef, user);
+  createUser(uid: string, user: Partial<User>): Promise<void> {
+    const userDoc = doc(this.firestore, 'users', uid);
+    return setDoc(userDoc, user);
   }
 
   getUsers(): Observable<User[]> {

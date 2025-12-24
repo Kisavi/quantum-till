@@ -23,7 +23,7 @@ export class RoleService {
     return addDoc(this.rolesCollectionRef, role);
   }
 
-  getRole(): Observable<Role[]> {
+  getRoles(): Observable<Role[]> {
     return collectionData(this.rolesCollectionRef);
   }
 

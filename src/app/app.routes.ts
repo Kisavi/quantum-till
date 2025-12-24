@@ -53,16 +53,16 @@ export const routes: Routes = [
       {
         path: 'users',
         loadComponent: () =>
-          import('./features/users/users.component').then((m) => m.UsersComponent),
+          import('./features/users/user-list/user-list.component').then((m) => m.UserListComponent),
       },
       {
         path: '',
-        redirectTo: 'dashboard',
+        redirectTo: 'user-validation',
         pathMatch: 'full',
       },
       {
         path: '**',
-        redirectTo: 'dashboard',
+        redirectTo: 'user-validation',
         pathMatch: 'full',
       },
     ],
