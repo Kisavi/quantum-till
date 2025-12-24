@@ -3,30 +3,31 @@ export interface Category {
   id: string;
   name: string;
 }
-export interface Item {
+export interface RawMaterialItem {
   id: string;
   name: string;
-  categoryId: string;         
-
+  categoryId: string;
+  baseUnit: string;             // e.g. "kg", "litre",boxes,pcs    
+  lowStockThreshold: number;     // in base units   
 }
-export interface RawMaterial {
+
+export interface RawMaterialItemDisplay extends RawMaterialItem {
+  categoryName: string;
+}
+
+export interface StockEntry {
   id: string;
-  itemId: string;                 // references Item.id
-  quantity: number;               // in base units (e.g. 500 for 10 bags of 50kg)
-  unitSize: number;               // e.g. 50 (kg per bag)
-  baseUnit: string;               // e.g. "kg"
-  purchaseUnit: string;           // e.g. "bag"
-  purchasePrice: number;          // price per purchase unit this time
-  lowStockThreshold: number;      // in base units
-  supplierName: string;
-  supplierContact: string;
-  photoUrl?: string;
+  itemId: string;                // references Item.id
+  quantity: number;              // ALWAYS in base units
+  purchasePrice: number;         // total price
+  supplierName?: string;
+  supplierContact?: string;
   notes?: string;
+  photoUrl?: string;
   purchaseDate: Date;
   dateAdded: Date;
 }
-
-export interface RawMaterialDisplay extends RawMaterial {
+export interface StockEntryDisplay extends StockEntry {
   itemName: string;
   categoryName: string;
   categoryId: string;
@@ -34,7 +35,7 @@ export interface RawMaterialDisplay extends RawMaterial {
 
 export interface ConsolidatedStock {
   id: string;
-  item: Item;
+  item: RawMaterialItem;
   categoryName: string;
   currentStock: number;
   status: StockStatus;

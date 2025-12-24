@@ -1,7 +1,7 @@
-import { RawMaterial } from './raw-material';
+import { RawMaterialItem } from './raw-material';
 
 export interface RecipeMaterial {
   id: string;
-  rawMaterial: RawMaterial;
+  rawMaterial: RawMaterialItem;
   unitSize: number;
 }

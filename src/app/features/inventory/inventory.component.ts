@@ -1,5 +1,3 @@
-// src/app/inventory/inventory.component.ts
-
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
@@ -29,9 +27,10 @@ import { InventoryService } from '../../core/services/inventory.service';
 import {
   Category,
   ConsolidatedStock,
-  Item,
-  RawMaterial,
-  RawMaterialDisplay
+  RawMaterialItem,
+  RawMaterialItemDisplay,
+  StockEntry,
+  StockEntryDisplay,
 } from '../../core/models/raw-material';
 
 interface SelectOption {
@@ -63,9 +62,9 @@ interface SelectOption {
 export class InventoryComponent implements OnInit {
   // Data
   inventory: ConsolidatedStock[] = [];
-  purchaseHistory: RawMaterial[] = [];
-  rawMaterials: RawMaterial[] = [];
-  items: Item[] = [];
+  purchaseHistory: StockEntryDisplay[] = [];
+  stockEntries: StockEntry[] = [];
+  items: RawMaterialItem[] = [];
   categories: Category[] = [];
 
   // UI state
@@ -77,15 +76,19 @@ export class InventoryComponent implements OnInit {
   selectedImageUrl = '';
 
   // Forms
-  inventoryForm!: FormGroup;
+  stockEntryForm!: FormGroup;
   categoryForm!: FormGroup;
-  itemForm!: FormGroup;
+  rawMaterialItemForm!: FormGroup;
 
   // Dropdowns
   categoryOptions: SelectOption[] = [];
   filteredItemOptions: SelectOption[] = [];
   isEditingEntry = false;
   editingEntryId: string | null = null;
+  isEditingItem = false;
+  editingItemId: string | null = null;
+  isCreatingCategory = false;
+  activeTab = '0';
 
 
   constructor(
@@ -104,15 +107,11 @@ export class InventoryComponent implements OnInit {
   // ---------------- FORMS ----------------
 
   private initForms(): void {
-    this.inventoryForm = this.fb.group({
+    this.stockEntryForm = this.fb.group({
       categoryId: ['', Validators.required],
       itemId: ['', Validators.required],
-      quantityPurchaseUnits: [null, [Validators.required, Validators.min(1)]],
-      unitSize: [null, [Validators.required, Validators.min(1)]],
-      baseUnit: ['', Validators.required],
-      purchaseUnit: ['', Validators.required],
-      pricePerPurchaseUnit: [null, [Validators.required, Validators.min(0)]],
-      lowStockThreshold: [null, [Validators.required, Validators.min(0)]],
+      quantity: [null, [Validators.required, Validators.min(1)]],
+      purchasePrice: [null, [Validators.required, Validators.min(0)]],
       supplierName: [''],
       supplierContact: [''],
       notes: [''],
@@ -123,11 +122,14 @@ export class InventoryComponent implements OnInit {
       name: ['', Validators.required]
     });
 
-    this.itemForm = this.fb.group({
-      name: ['', Validators.required]
+    this.rawMaterialItemForm = this.fb.group({
+      categoryId: ['', Validators.required],
+      name: ['', Validators.required],
+      baseUnit: ['', Validators.required],
+      lowStockThreshold: [0, [Validators.required, Validators.min(0)]]
     });
 
-    this.inventoryForm.get('categoryId')?.valueChanges.subscribe(val => {
+    this.stockEntryForm.get('categoryId')?.valueChanges.subscribe(val => {
       if (val === 'new') {
         this.visibleCategoryModal = true;
       } else {
@@ -135,7 +137,15 @@ export class InventoryComponent implements OnInit {
       }
     });
 
-    this.inventoryForm.get('itemId')?.valueChanges.subscribe(val => {
+      this.rawMaterialItemForm.get('categoryId')?.valueChanges.subscribe(val => {
+      if (val === 'new') {
+        this.visibleCategoryModal = true;
+      } else {
+        this.updateFilteredItemOptions();
+      }
+    });
+
+    this.stockEntryForm.get('itemId')?.valueChanges.subscribe(val => {
       if (val === 'new') {
         this.visibleItemModal = true;
       }
@@ -149,14 +159,20 @@ export class InventoryComponent implements OnInit {
 
     combineLatest([
       this.inventoryService.getConsolidatedStock(),
-      this.inventoryService.getRawMaterials(),
+      this.inventoryService.getStockEntries(),
       this.inventoryService.getCategories(),
       this.inventoryService.getItems()
     ]).subscribe({
       next: ([stock, raw, categories, items]) => {
         this.inventory = stock;
         this.categories = categories;
-        this.items = items;
+        this.items = items.map(i => {
+          const category = categories.find(c => c.id === i.categoryId);
+          return {
+            ...i,
+            categoryName: category?.name || 'Unknown'
+          } as RawMaterialItemDisplay;
+        });
         this.purchaseHistory = raw.map(r => {
           const item = this.items.find(i => i.id === r.itemId);
           const category = this.categories.find(c => c.id === item?.categoryId);
@@ -167,10 +183,10 @@ export class InventoryComponent implements OnInit {
             categoryId,
             itemName: item?.name || 'Unknown',
             categoryName: category?.name || 'Unknown'
-          } as RawMaterialDisplay;
+          } as StockEntryDisplay;
         });
 
-        this.rawMaterials = raw;
+        this.stockEntries = raw;
 
         console.log({ stock, raw, categories, items });
 
@@ -193,28 +209,22 @@ export class InventoryComponent implements OnInit {
     });
   }
 
-  showDialog(item: RawMaterialDisplay): void;
+  showDialog(item: StockEntryDisplay): void;
   showDialog(): void;
-  showDialog(item?: RawMaterialDisplay): void {
-    this.inventoryForm.reset();
+
+
+  showDialog(item?: StockEntryDisplay): void {
+    this.stockEntryForm.reset();
 
     if (item) {
       this.isEditingEntry = true;
       this.editingEntryId = item.id;
-      const quantityPurchaseUnits =
-        item.unitSize > 0
-          ? item.quantity / item.unitSize
-          : 0;
 
-      this.inventoryForm.patchValue({
+      this.stockEntryForm.patchValue({
         categoryId: item.categoryId,
         itemId: item.itemId,
-        quantityPurchaseUnits,
-        unitSize: item.unitSize,
-        baseUnit: item.baseUnit,
-        purchaseUnit: item.purchaseUnit,
-        pricePerPurchaseUnit: item.purchasePrice,
-        lowStockThreshold: item.lowStockThreshold,
+        quantity: item.quantity,
+        purchasePrice: item.purchasePrice,
         supplierName: item.supplierName,
         supplierContact: item.supplierContact,
         notes: item.notes ?? '',
@@ -232,7 +242,7 @@ export class InventoryComponent implements OnInit {
 
     const reader = new FileReader();
     reader.onload = () => {
-      this.inventoryForm.patchValue({ photoBase64: reader.result });
+      this.stockEntryForm.patchValue({ photoBase64: reader.result });
     };
     reader.readAsDataURL(file);
   }
@@ -240,7 +250,7 @@ export class InventoryComponent implements OnInit {
   // ---------------- DROPDOWNS ----------------
 
   updateFilteredItemOptions(): void {
-    const categoryId = this.inventoryForm.get('categoryId')?.value;
+    const categoryId = this.stockEntryForm.get('categoryId')?.value;
 
     if (!categoryId || categoryId === 'new') {
       this.filteredItemOptions = [
@@ -263,6 +273,7 @@ export class InventoryComponent implements OnInit {
       this.categoryForm.markAllAsTouched();
       return;
     }
+    this.isCreatingCategory = true;
 
     try {
       await this.inventoryService.addCategory({
@@ -274,6 +285,7 @@ export class InventoryComponent implements OnInit {
         detail: 'Category created'
       });
 
+      this.isCreatingCategory = false;
       this.visibleCategoryModal = false;
       this.categoryForm.reset();
       this.loadData();
@@ -282,31 +294,89 @@ export class InventoryComponent implements OnInit {
         severity: 'error',
         detail: 'Failed to create category'
       });
+      this.isCreatingCategory = false;
     }
   }
 
   // ---------------- CREATE ITEM ----------------
 
-  async addNewItem(): Promise<void> {
-    if (this.itemForm.invalid) {
-      this.itemForm.markAllAsTouched();
+    showItemDialog(item?: RawMaterialItem): void {
+    this.rawMaterialItemForm.reset();
+    this.isEditingItem = false;
+    this.editingItemId = null;
+
+    if (item) {
+      this.isEditingItem = true;
+      this.editingItemId = item.id;
+      this.rawMaterialItemForm.patchValue({
+        categoryId: item.categoryId,
+        name: item.name,
+        baseUnit: item.baseUnit,
+        lowStockThreshold: item.lowStockThreshold
+      });
+    }
+
+    this.visibleItemModal = true;
+  }
+
+  saveItem(): void {
+      if (this.rawMaterialItemForm.invalid) {
+      this.rawMaterialItemForm.markAllAsTouched();
       return;
     }
 
-    const categoryId = this.inventoryForm.get('categoryId')?.value;
-    if (!categoryId || categoryId === 'new') {
-      this.messageService.add({
-        severity: 'warn',
-        detail: 'Select a category first'
-      });
-      return;
+    const f = this.rawMaterialItemForm.value;
+    const payload: Omit<RawMaterialItem, 'id'> = {
+      categoryId: f.categoryId,
+      name: f.name.trim(),
+      baseUnit: f.baseUnit.trim(),
+      lowStockThreshold: f.lowStockThreshold
+    };
+    if (this.isEditingItem) {
+      this.updateItem(payload);
+    } else {
+      this.addNewItem(payload);
     }
+  }
+
+  async updateItem(payload: Omit<RawMaterialItem, 'id'>): Promise<void> {
+    if (!this.editingItemId) return;
 
     try {
-      await this.inventoryService.addItem({
-        name: this.itemForm.value.name.trim(),
-        categoryId
+      await this.inventoryService.updateItem(this.editingItemId, payload);
+
+      this.messageService.add({
+        severity: 'success',
+        detail: 'Item updated successfully'
       });
+
+      this.visibleItemModal = false;
+      this.rawMaterialItemForm.reset();
+      this.isEditingItem = false;
+      this.editingItemId = null;
+      this.loadData();
+    } catch {
+      this.messageService.add({
+        severity: 'error',
+        detail: 'Failed to update item'
+      });
+    }
+  }
+
+  async addNewItem(payload: Omit<RawMaterialItem, 'id'>): Promise<void> {
+
+
+    // const categoryId = this.stockEntryForm.get('categoryId')?.value || this.rawMaterialItemForm.get('categoryId')?.value;
+    // if (!categoryId || categoryId === 'new') {
+    //   this.messageService.add({
+    //     severity: 'warn',
+    //     detail: 'Select a category first'
+    //   });
+    //   return;
+    // }
+
+    try {
+      await this.inventoryService.addItem(payload);
 
       this.messageService.add({
         severity: 'success',
@@ -314,7 +384,7 @@ export class InventoryComponent implements OnInit {
       });
 
       this.visibleItemModal = false;
-      this.itemForm.reset();
+      this.rawMaterialItemForm.reset();
       this.loadData();
     } catch {
       this.messageService.add({
@@ -324,24 +394,75 @@ export class InventoryComponent implements OnInit {
     }
   }
 
+  confirmDeleteRawMaterialItem(item: RawMaterialItem) {
+    this.confirmationService.confirm({
+      message: `All stock entries related to ${item.name} will be permanently deleted. Are you sure?`,
+      header: 'Confirm Deletion',
+      icon: 'pi pi-info-circle',
+      rejectLabel: 'Cancel',
+      rejectButtonProps: {
+        label: 'Cancel',
+        severity: 'secondary',
+        outlined: true,
+      },
+      acceptButtonProps: {
+        label: 'Delete',
+        severity: 'danger',
+      },
+
+      accept: () => {
+        this.deleteItemById(item)
+      },
+      reject: () => {
+        this.messageService.add({ severity: 'error', summary: 'Rejected', detail: 'You have rejected' });
+      },
+    });
+  }
+
+  async deleteItemById(item: RawMaterialItem): Promise<void> {
+    try {
+      const related = this.stockEntries.filter(
+        r => r.itemId === item.id
+      );
+
+      // Delete all related stock entries
+      for (const entry of related) {
+        await this.inventoryService.deleteStockEntry(entry.id);
+      }
+
+      // Delete the raw material item itself
+      await this.inventoryService.deleteItem(item.id);
+
+      this.messageService.add({
+        severity: 'success',
+        detail: 'Item and related stock entries deleted successfully'
+      });
+
+      this.loadData();
+    } catch {
+      this.messageService.add({
+        severity: 'error',
+        detail: 'Failed to delete item'
+      });
+    }
+  } 
+
   // ---------------- ADD RAW MATERIAL ----------------
 
   async saveInventory(): Promise<void> {
-    if (this.inventoryForm.invalid) {
-      this.inventoryForm.markAllAsTouched();
+    if (this.stockEntryForm.invalid) {
+      this.stockEntryForm.markAllAsTouched();
       return;
     }
 
-    const f = this.inventoryForm.value;
+    const f = this.stockEntryForm.value;
 
-    const rawMaterial: Omit<RawMaterial, 'id'> = {
+
+
+    const stockEntry: Omit<StockEntry, 'id'> = {
       itemId: f.itemId,
-      quantity: f.quantityPurchaseUnits * f.unitSize,
-      unitSize: f.unitSize,
-      baseUnit: f.baseUnit,
-      purchaseUnit: f.purchaseUnit,
-      purchasePrice: f.pricePerPurchaseUnit,
-      lowStockThreshold: f.lowStockThreshold,
+      quantity: f.quantity,
+      purchasePrice: f.purchasePrice,
       supplierName: f.supplierName,
       supplierContact: f.supplierContact,
       purchaseDate: new Date(),
@@ -349,19 +470,19 @@ export class InventoryComponent implements OnInit {
       ...(f.notes && { notes: f.notes }),
       ...(f.photoBase64 && { photoUrl: f.photoBase64 })
     };
-    console.log(rawMaterial);
-    this.isEditingEntry ? this.updateInventoryEntry(rawMaterial) : this.createNewInventoryEntry(rawMaterial);
+    console.log(stockEntry);
+    this.isEditingEntry ? this.updateStockEntry(stockEntry) : this.createNewStockEntry(stockEntry);
   }
 
-  async createNewInventoryEntry(newRaw: Omit<RawMaterial, 'id'>): Promise<void> {
+  async createNewStockEntry(newStockEntry: Omit<StockEntry, 'id'>): Promise<void> {
     try {
-      await this.inventoryService.addRawMaterial(newRaw);
+      await this.inventoryService.addStockEntry(newStockEntry);
       this.visibleDialog = false;
       this.messageService.add({
         severity: 'success',
         detail: 'Stock added successfully'
       });
-      this.inventoryForm.reset();
+      this.stockEntryForm.reset();
       this.selectedImageUrl = '';
       this.loadData();
     } catch (error) {
@@ -373,10 +494,10 @@ export class InventoryComponent implements OnInit {
     }
   }
 
-  async updateInventoryEntry(updatedRaw: Omit<RawMaterial, 'id'>): Promise<void> {
+  async updateStockEntry(updatedStockEntry: Omit<StockEntry, 'id'>): Promise<void> {
     if (this.editingEntryId) {
       try {
-        await this.inventoryService.updateRawMaterial(this.editingEntryId, updatedRaw)
+        await this.inventoryService.updateStockEntry(this.editingEntryId, updatedStockEntry)
         this.visibleDialog = false;
         this.messageService.add({
           severity: 'success',
@@ -384,7 +505,7 @@ export class InventoryComponent implements OnInit {
         });
         this.editingEntryId = null;
         this.isEditingEntry = false;
-        this.inventoryForm.reset();
+        this.stockEntryForm.reset();
         this.selectedImageUrl = '';
         this.loadData();
       } catch (error) {
@@ -419,32 +540,32 @@ export class InventoryComponent implements OnInit {
     }
   }
 
-  getRawMaterialName(entry: RawMaterial): string {
-    const item = this.items.find(i => i.id === entry.itemId);
-    return item?.name || 'Unknown';
-  }
+  // getRawMaterialName(entry: RawMaterial): string {
+  //   const item = this.items.find(i => i.id === entry.itemId);
+  //   return item?.name || 'Unknown';
+  // }
 
-  getQuantityAdded(entry: RawMaterial): string {
-    const units = Math.floor(entry.quantity / entry.unitSize);
-    const remainder = entry.quantity % entry.unitSize;
+  // getQuantityAdded(entry: RawMaterial): string {
+  //   const units = Math.floor(entry.quantity / entry.unitSize);
+  //   const remainder = entry.quantity % entry.unitSize;
 
-    if (remainder === 0) {
-      return `${units} ${entry.purchaseUnit}${units !== 1 ? 's' : ''}`;
-    }
+  //   if (remainder === 0) {
+  //     return `${units} ${entry.purchaseUnit}${units !== 1 ? 's' : ''}`;
+  //   }
 
-    return `${units} ${entry.purchaseUnit}${units !== 1 ? 's' : ''} + ${remainder} ${entry.baseUnit}`;
-  }
+  //   return `${units} ${entry.purchaseUnit}${units !== 1 ? 's' : ''} + ${remainder} ${entry.baseUnit}`;
+  // }
 
-  getTotalCost(entry: RawMaterial): number {
-    return (entry.quantity / entry.unitSize) * entry.purchasePrice;
-  }
+  // getTotalCost(entry: RawMaterial): number {
+  //   return (entry.quantity / entry.unitSize) * entry.purchasePrice;
+  // }
 
   getDateInMillis(timestamp: any): number {
     return timestamp?.seconds ? timestamp.seconds * 1000 : 0;
   }
 
   // ---------------- DELETE ITEM + HISTORY ----------------
-  confirmDeleteEntry(entry: RawMaterialDisplay) {
+  confirmDeleteEntry(entry: StockEntryDisplay) {
     this.confirmationService.confirm({
       message: `Do you want to delete this ${entry.itemName} record?`,
       header: 'Confirm Deletion',
@@ -469,9 +590,9 @@ export class InventoryComponent implements OnInit {
     });
   }
 
-  async deletePurchaseEntry(entry: RawMaterialDisplay): Promise<void> {
+  async deletePurchaseEntry(entry: StockEntryDisplay): Promise<void> {
     try {
-      await this.inventoryService.deleteRawMaterial(entry.id);
+      await this.inventoryService.deleteStockEntry(entry.id);
       this.messageService.add({
         severity: 'success',
         detail: 'Purchase entry deleted'
@@ -487,7 +608,7 @@ export class InventoryComponent implements OnInit {
 
   confirmDeleteItem(stock: ConsolidatedStock) {
     this.confirmationService.confirm({
-      message: `${stock.item.name} and all purchase stock entries will be permanently deleted. Are you sure?`,
+      message: `${stock.item.name} and all it's purchase stock entries will be permanently deleted. Are you sure?`,
       header: 'Confirm Deletion',
       icon: 'pi pi-info-circle',
       rejectLabel: 'Cancel',
@@ -512,17 +633,17 @@ export class InventoryComponent implements OnInit {
 
   async deleteItem(stock: ConsolidatedStock): Promise<void> {
     try {
-      const related = this.rawMaterials.filter(
+      const related = this.stockEntries.filter(
         r => r.itemId === stock.item.id
       );
 
-      // Delete all related raw materials
+      // Delete all related stock entries
       for (const r of related) {
-        await this.inventoryService.deleteRawMaterial(r.id);
+        await this.inventoryService.deleteStockEntry(r.id);
       }
 
       // Delete the item itself
-      await this.inventoryService.deleteItem(stock.id);
+      await this.inventoryService.deleteItem(stock.item.id);
 
       this.messageService.add({
         severity: 'success',
