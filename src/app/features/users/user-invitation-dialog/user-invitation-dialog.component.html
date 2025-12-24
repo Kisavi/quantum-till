@@ -5,11 +5,10 @@
   </span>
   <form [formGroup]="invitationForm">
     <div class="mb-3">
-      <label for="email" class="font-semibold block mb-1">Role</label>
-      @let roles = roles$ | async;
+      <label for="role" class="font-semibold block mb-1">Role</label>
       <p-select
         id="role"
-        [options]="roles!"
+        [options]="roles"
         [loading]="!roles"
         optionLabel="name"
         [filter]="true"
@@ -17,6 +16,7 @@
         placeholder="Select a role"
         formControlName="role"
         class="w-full"
+        required
       />
     </div>
     <div class="mb-8">
@@ -28,11 +28,12 @@
         placeholder="Enter email"
         autocomplete="off"
         formControlName="email"
+        required
       />
     </div>
   </form>
   <div class="flex justify-end gap-2">
     <p-button label="Cancel" severity="secondary" (click)="closeDialog()" />
-    <p-button label="Invite" (click)="invite()" />
+    <p-button label="Invite" (click)="invite()" [disabled]="invitationForm.invalid" />
   </div>
 </p-dialog>

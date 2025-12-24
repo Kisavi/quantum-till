@@ -16,7 +16,7 @@ import {
 } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 import { Invitation } from '../models/invitation';
-import { Role } from '../models/role';
+import { RoleName } from '../models/role-name';
 import { User } from '../models/user';
 
 @Injectable({
@@ -30,7 +30,7 @@ export class UserService {
     'invitations',
   ) as CollectionReference<Invitation>;
 
-  inviteUser(email: string, role: Role): Promise<DocumentReference<Invitation>> {
+  inviteUser(email: string, role: RoleName): Promise<DocumentReference<Invitation>> {
     const docId = doc(this.invitationsCollectionRef).id;
     const invitation = { id: docId, email, role } as Invitation;
     return addDoc(this.invitationsCollectionRef, invitation);

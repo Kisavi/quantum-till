@@ -1,4 +1,3 @@
-import { AsyncPipe } from '@angular/common';
 import { Component, inject, input, output } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MessageService } from 'primeng/api';
@@ -7,24 +6,23 @@ import { Dialog } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { Select } from 'primeng/select';
 import { Toast } from 'primeng/toast';
-import { RoleService } from '../../../core/services/role.service';
+import { RoleName } from '../../../core/models/role-name';
 import { UserService } from '../../../core/services/user.service';
 
 @Component({
   selector: 'app-user-invitation-dialog',
-  imports: [Dialog, Select, Button, InputTextModule, AsyncPipe, ReactiveFormsModule, Toast],
+  imports: [Dialog, Select, Button, InputTextModule, ReactiveFormsModule, Toast],
   templateUrl: './user-invitation-dialog.component.html',
   providers: [MessageService],
 })
 export class UserInvitationDialogComponent {
-  private roleService = inject(RoleService);
   private userService = inject(UserService);
   private messageService = inject(MessageService);
 
   visible = input(false);
   visibleChange = output<boolean>();
 
-  roles$ = this.roleService.getRoles();
+  roles: RoleName[] = ['ADMIN', 'MANAGER', 'RIDER', 'COOK'];
 
   invitationForm = new FormGroup({
     email: new FormControl(),
