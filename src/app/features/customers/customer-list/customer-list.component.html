@@ -1,0 +1,51 @@
+<p-toast />
+<p-confirmdialog />
+
+<div class="flex items-center gap-4 mt-10 mb-6">
+  <div class="grow">
+    <h1 class="text-2xl font-bold text-gray-800">Customers</h1>
+    <p class="text-gray-600">Manage your customers</p>
+  </div>
+  <p-button (click)="openDialog()">Add Customer</p-button>
+</div>
+
+<p-card>
+  @let customers = customers$ | async;
+
+  @if (customers) {
+    <p-table [value]="customers">
+      <ng-template #header>
+        <tr>
+          <th>Name</th>
+          <th>Route</th>
+          <th>Location</th>
+          <th>Phone Number</th>
+          <th style="width: 5rem"></th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-customer>
+        <tr>
+          <td>{{ customer.name }}</td>
+          <td>{{ customer.route.name }}</td>
+          <td>{{ customer.location }}</td>
+          <td>{{ customer.phoneNumber }}</td>
+          <td>
+            <p-button
+              (click)="deleteCustomer(customer)"
+              icon="pi pi-trash"
+              severity="secondary"
+              rounded
+            />
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">-- No customers --</ng-template>
+    </p-table>
+  } @else {
+    <div class="text-center">loading...</div>
+  }
+</p-card>
+
+<app-customer-add [(visible)]="dialogVisible" />

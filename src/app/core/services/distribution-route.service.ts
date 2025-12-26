@@ -27,12 +27,6 @@ export class DistributionRouteService {
   ) as CollectionReference<DistributionRoute>;
 
   getDistributionRoutes(): Observable<DistributionRoute[]> {
-    collectionSnapshots(this.distRoutesCollRef).subscribe((s) =>
-      s.forEach((d) => {
-        console.log(d.id);
-        console.log(d.data());
-      }),
-    );
     return collectionData(this.distRoutesCollRef);
   }
 
