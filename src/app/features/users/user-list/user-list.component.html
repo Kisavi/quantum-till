@@ -39,7 +39,7 @@
           <td>
             <p-button
               (click)="toggleActiveStatus(user)"
-              icon="pi pi-trash"
+              icon="pi {{ user.active ? 'pi-lock' : 'pi-key' }}"
               severity="secondary"
               rounded
             />

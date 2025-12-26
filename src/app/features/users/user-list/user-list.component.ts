@@ -41,7 +41,7 @@ export class UserListComponent {
   async toggleActiveStatus(user: User): Promise<void> {
     this.confirmationService.confirm({
       message: 'Are you sure that you want to proceed?',
-      header: `${user.active ? 'Enable' : 'Disable'} ${user.displayName}`,
+      header: `${user.active ? 'Deactivate' : 'Activate'} ${user.displayName}`,
       closable: true,
       closeOnEscape: true,
       rejectButtonProps: {
