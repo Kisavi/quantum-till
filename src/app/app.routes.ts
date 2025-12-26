@@ -41,6 +41,13 @@ export const routes: Routes = [
           import('./features/trips/trips.component').then((m) => m.TripsComponent),
       },
       {
+        path: 'routes',
+        loadComponent: () =>
+          import('./features/distribution-routes/distribution-route-list/distribution-route-list.component').then(
+            (m) => m.DistributionRouteListComponent,
+          ),
+      },
+      {
         path: 'assets',
         loadComponent: () =>
           import('./features/assets/assets.component').then((m) => m.AssetsComponent),

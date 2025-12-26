@@ -1,47 +1,45 @@
 import { AsyncPipe } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
-import { Badge } from 'primeng/badge';
 import { Button } from 'primeng/button';
 import { Card } from 'primeng/card';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { TableModule } from 'primeng/table';
 import { Toast } from 'primeng/toast';
-import { User } from '../../../core/models/user';
-import { UserService } from '../../../core/services/user.service';
-import { UserInvitationDialogComponent } from '../user-invitation-dialog/user-invitation-dialog.component';
+import { DistributionRoute } from '../../../core/models/distribution-route';
+import { DistributionRouteService } from '../../../core/services/distribution-route.service';
+import { DistributionRouteAddComponent } from '../distribution-route-add/distribution-route-add.component';
 
 @Component({
-  selector: 'app-user-list',
+  selector: 'app-distribution-route-list',
   imports: [
-    TableModule,
-    AsyncPipe,
-    Button,
-    Card,
-    UserInvitationDialogComponent,
     Toast,
     ConfirmDialog,
-    Badge,
+    Button,
+    Card,
+    AsyncPipe,
+    TableModule,
+    DistributionRouteAddComponent,
   ],
-  templateUrl: './user-list.component.html',
+  templateUrl: './distribution-route-list.component.html',
   providers: [MessageService, ConfirmationService],
 })
-export class UserListComponent {
-  private userService = inject(UserService);
+export class DistributionRouteListComponent {
+  private distributionRouteService = inject(DistributionRouteService);
   private messageService = inject(MessageService);
   private confirmationService = inject(ConfirmationService);
 
-  users$ = this.userService.getUsers();
+  routes$ = this.distributionRouteService.getDistributionRoutes();
   dialogVisible = false;
 
   openDialog(): void {
     this.dialogVisible = true;
   }
 
-  async toggleActiveStatus(user: User): Promise<void> {
+  async deleteRoute(route: DistributionRoute): Promise<void> {
     this.confirmationService.confirm({
       message: 'Are you sure that you want to proceed?',
-      header: `${user.active ? 'Enable' : 'Disable'} ${user.displayName}`,
+      header: `Delete ${route.name} route`,
       closable: true,
       closeOnEscape: true,
       rejectButtonProps: {
@@ -55,17 +53,17 @@ export class UserListComponent {
       },
       accept: async () => {
         try {
-          await this.userService.changeUserActiveStatus(user.uid, !user.active);
+          await this.distributionRouteService.deleteDistributionRoute(route.id);
           this.messageService.add({
             severity: 'success',
             summary: 'Success',
-            detail: 'User status changed',
+            detail: 'Route deleted',
           });
         } catch (e) {
           this.messageService.add({
             severity: 'error',
             summary: 'Error',
-            detail: 'Failed to change user status',
+            detail: 'Failed to delete route',
           });
           console.error(e);
         }

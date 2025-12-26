@@ -3,7 +3,7 @@
 import { Injectable } from '@angular/core';
 import { Trip, CreateTripDto, EndTripDto } from '../models/trip';
 import { Vehicle } from '../models/vehicle';
-import { Route } from '../models/route';
+import { DistributionRoute } from '../models/distribution-route';
 
 @Injectable({
   providedIn: 'root'
@@ -26,7 +26,7 @@ export class TripService {
     }
   ];
 
-  routes: Route[] = [
+  routes: DistributionRoute[] = [
     { id: '1', name: 'Mariakani' },
     { id: '2', name: 'Mombasa' },
     { id: '3', name: 'Kilifi' },

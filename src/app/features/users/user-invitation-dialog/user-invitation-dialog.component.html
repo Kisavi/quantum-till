@@ -1,8 +1,10 @@
 <p-toast />
+
 <p-dialog header="Invite" [visible]="visible()" (visibleChange)="visibleChange.emit($event)">
   <span class="p-text-secondary block mb-6">
     Invite someone by choosing their role and entering their email below
   </span>
+
   <form [formGroup]="invitationForm">
     <div class="mb-3">
       <label for="role" class="font-semibold block mb-1">Role</label>
@@ -16,6 +18,7 @@
         required
       />
     </div>
+
     <div class="mb-8">
       <label for="email" class="font-semibold block mb-1">Email</label>
       <input
@@ -29,8 +32,9 @@
       />
     </div>
   </form>
+
   <div class="flex justify-end gap-2">
     <p-button label="Cancel" severity="secondary" (click)="closeDialog()" />
-    <p-button label="Invite" (click)="invite()" [disabled]="invitationForm.invalid" />
+    <p-button label="Invite" (click)="invite()" [disabled]="invitationForm.invalid || saving" />
   </div>
 </p-dialog>

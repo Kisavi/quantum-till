@@ -3,52 +3,48 @@ import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MessageService } from 'primeng/api';
 import { Button } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
-import { InputTextModule } from 'primeng/inputtext';
-import { Select } from 'primeng/select';
+import { InputText } from 'primeng/inputtext';
 import { Toast } from 'primeng/toast';
-import { RoleName } from '../../../core/models/role-name';
-import { UserService } from '../../../core/services/user.service';
+import { DistributionRoute } from '../../../core/models/distribution-route';
+import { DistributionRouteService } from '../../../core/services/distribution-route.service';
 
 @Component({
-  selector: 'app-user-invitation-dialog',
-  imports: [Dialog, Select, Button, InputTextModule, ReactiveFormsModule, Toast],
-  templateUrl: './user-invitation-dialog.component.html',
+  selector: 'app-distribution-route-add',
+  imports: [Toast, Dialog, Button, ReactiveFormsModule, InputText],
+  templateUrl: './distribution-route-add.component.html',
   providers: [MessageService],
 })
-export class UserInvitationDialogComponent {
-  private userService = inject(UserService);
+export class DistributionRouteAddComponent {
+  private distributionRouteService = inject(DistributionRouteService);
   private messageService = inject(MessageService);
 
   visible = input(false);
   visibleChange = output<boolean>();
 
   saving = false;
-  roles: RoleName[] = ['ADMIN', 'MANAGER', 'RIDER', 'COOK'];
 
-  invitationForm = new FormGroup({
-    email: new FormControl(),
-    role: new FormControl(),
+  routeForm = new FormGroup({
+    name: new FormControl(),
   });
 
-  async invite(): Promise<void> {
+  async save(): Promise<void> {
     this.saving = true;
-    const { email, role } = this.invitationForm.value;
+    const route = this.routeForm.value as DistributionRoute;
 
     try {
-      await this.userService.inviteUser(email, role);
+      await this.distributionRouteService.addDistributionRoute(route);
 
       this.messageService.add({
         severity: 'success',
         summary: 'Success',
-        detail: 'Invitation sent',
+        detail: 'Route added',
       });
-
       this.closeDialog();
     } catch (e) {
       this.messageService.add({
         severity: 'error',
         summary: 'Error',
-        detail: 'Invitation failed',
+        detail: 'Adding route failed',
       });
       console.error(e);
     } finally {
@@ -57,7 +53,7 @@ export class UserInvitationDialogComponent {
   }
 
   closeDialog(): void {
-    this.invitationForm.reset();
+    this.routeForm.reset();
     this.visibleChange.emit(false);
   }
 }

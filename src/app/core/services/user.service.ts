@@ -1,17 +1,16 @@
 import { inject, Injectable } from '@angular/core';
 import { Auth, createUserWithEmailAndPassword, updateProfile } from '@angular/fire/auth';
 import {
-  addDoc,
   collection,
   collectionData,
   CollectionReference,
   doc,
-  DocumentReference,
   Firestore,
   getDocs,
   query,
   QueryDocumentSnapshot,
   serverTimestamp,
+  setDoc,
   updateDoc,
   where,
   writeBatch,
@@ -34,10 +33,10 @@ export class UserService {
     'invitations',
   ) as CollectionReference<Invitation>;
 
-  inviteUser(email: string, role: RoleName): Promise<DocumentReference<Invitation>> {
-    const docId = doc(this.invitationsCollectionRef).id;
-    const invitation = { id: docId, email, role } as Invitation;
-    return addDoc(this.invitationsCollectionRef, invitation);
+  inviteUser(email: string, role: RoleName): Promise<void> {
+    const docRef = doc(this.invitationsCollectionRef);
+    const invitation = { id: docRef.id, email, role } as Invitation;
+    return setDoc(docRef, invitation);
   }
 
   async getInvitation(email: string | null): Promise<QueryDocumentSnapshot<Invitation> | null> {
