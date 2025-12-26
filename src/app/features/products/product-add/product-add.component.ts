@@ -7,53 +7,50 @@ import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
 import { Select } from 'primeng/select';
 import { Toast } from 'primeng/toast';
-import { Customer } from '../../../core/models/customer';
-import { CustomerService } from '../../../core/services/customer.service';
-import { DistributionRouteService } from '../../../core/services/distribution-route.service';
+import { Product } from '../../../core/models/product';
+import { ProductService } from '../../../core/services/product.service';
 
 @Component({
-  selector: 'app-customer-add',
-  imports: [Toast, Dialog, Select, AsyncPipe, InputText, Button, ReactiveFormsModule],
-  templateUrl: './customer-add.component.html',
+  selector: 'app-product-add',
+  imports: [Toast, Dialog, InputText, Button, ReactiveFormsModule],
+  templateUrl: './product-add.component.html',
   providers: [MessageService],
 })
-export class CustomerAddComponent {
-  private customerService = inject(CustomerService);
+export class ProductAddComponent {
+  private productService = inject(ProductService);
   private messageService = inject(MessageService);
-  private distributionRouteService = inject(DistributionRouteService);
 
   visible = input(false);
   visibleChange = output<boolean>();
 
   saving = false;
-  routes$ = this.distributionRouteService.getDistributionRoutes();
 
-  customerForm = new FormGroup({
+  productForm = new FormGroup({
     name: new FormControl(),
-    route: new FormControl(),
-    location: new FormControl(),
-    phoneNumber: new FormControl(),
-    image: new FormControl(),
+    unitPrice: new FormControl(),
+    shelfLife: new FormControl(),
+    weight: new FormControl(),
+    piecesPerPacket: new FormControl(1),
   });
 
   async save(): Promise<void> {
     this.saving = true;
-    const customer = this.customerForm.value as Customer;
+    const product = this.productForm.value as Product;
 
     try {
-      await this.customerService.addCustomer(customer);
+      await this.productService.addProduct(product);
 
       this.messageService.add({
         severity: 'success',
         summary: 'Success',
-        detail: 'Customer added',
+        detail: 'Product added',
       });
       this.closeDialog();
     } catch (e) {
       this.messageService.add({
         severity: 'error',
         summary: 'Error',
-        detail: 'Adding customer failed',
+        detail: 'Adding product failed',
       });
       console.error(e);
     } finally {
@@ -62,7 +59,7 @@ export class CustomerAddComponent {
   }
 
   closeDialog(): void {
-    this.customerForm.reset();
+    this.productForm.reset();
     this.visibleChange.emit(false);
   }
 }
