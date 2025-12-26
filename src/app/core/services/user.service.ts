@@ -5,7 +5,6 @@ import {
   collection,
   collectionData,
   CollectionReference,
-  deleteDoc,
   doc,
   DocumentReference,
   Firestore,
@@ -13,6 +12,7 @@ import {
   query,
   QueryDocumentSnapshot,
   serverTimestamp,
+  updateDoc,
   where,
   writeBatch,
 } from '@angular/fire/firestore';
@@ -103,8 +103,8 @@ export class UserService {
     return collectionData(this.usersCollectionRef);
   }
 
-  removeUser(uid: string): Promise<any> {
-    const userDoc = doc(this.usersCollectionRef, uid);
-    return deleteDoc(userDoc);
+  changeUserActiveStatus(uid: string, active: boolean): Promise<any> {
+    const userDocRef = doc(this.usersCollectionRef, uid);
+    return updateDoc(userDocRef, { active });
   }
 }

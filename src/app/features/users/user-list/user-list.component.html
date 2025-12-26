@@ -1,7 +1,6 @@
 <p-toast />
 <p-confirmdialog />
 
-
 <div class="flex items-center gap-4 mt-10 mb-6">
   <div class="grow">
     <h1 class="text-2xl font-bold text-gray-800">Users</h1>
@@ -20,6 +19,7 @@
           <th>Name</th>
           <th>Email</th>
           <th>Role</th>
+          <th>Status</th>
           <th style="width: 5rem"></th>
         </tr>
       </ng-template>
@@ -28,9 +28,21 @@
         <tr>
           <td>{{ user.displayName }}</td>
           <td>{{ user.email }}</td>
-          <td>{{ user.role.name }}</td>
+          <td>{{ user.role }}</td>
           <td>
-            <p-button (click)="remove(user.uid)" icon="pi pi-trash" severity="secondary" rounded />
+            @if (user.active) {
+              <p-badge severity="success" value="Active" />
+            } @else {
+              <p-badge severity="warn" value="Inactive" />
+            }
+          </td>
+          <td>
+            <p-button
+              (click)="toggleActiveStatus(user)"
+              icon="pi pi-trash"
+              severity="secondary"
+              rounded
+            />
           </td>
         </tr>
       </ng-template>
