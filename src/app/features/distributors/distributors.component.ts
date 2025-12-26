@@ -271,7 +271,7 @@ export class DistributorsComponent {
   // Image viewer modal
   viewImage(url: string): void {
     this.selectedImageUrl.set(url);
-    this.visibleImageModal = true;
+    this.visibleImageModal = true; 
   }
 
   // Save (Add or Update)
