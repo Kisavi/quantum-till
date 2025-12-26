@@ -3,7 +3,7 @@
 
   <div class="flex flex-col gap-6">
     @if (errorMessage) {
-    <p-message severity="error">{{ errorMessage }}</p-message>
+      <p-message severity="error">{{ errorMessage }}</p-message>
     }
 
     <p-floatlabel variant="on">
@@ -15,6 +15,7 @@
         formControlName="displayName"
         autocomplete="name"
         class="w-full"
+        required
       />
       <label for="full-name">Full Name</label>
     </p-floatlabel>
@@ -28,6 +29,7 @@
         formControlName="email"
         autocomplete="email"
         class="w-full"
+        required
       />
       <label for="email">Email</label>
     </p-floatlabel>
@@ -41,6 +43,7 @@
           pInputText
           formControlName="password"
           autocomplete="new-password"
+          required
         />
         <label for="password">Password</label>
       </p-floatlabel>
@@ -53,12 +56,18 @@
           pInputText
           formControlName="confirmPassword"
           autocomplete="new-password"
+          required
         />
         <label for="confirm-password">Password</label>
       </p-floatlabel>
     </div>
 
-    <button (click)="register()" pButton class="text-center w-full mb-10">
+    <button
+      (click)="register()"
+      pButton
+      class="text-center w-full mb-10"
+      [disabled]="loading || registerForm.invalid"
+    >
       <span pButtonLabel>Register</span>
     </button>
   </div>
