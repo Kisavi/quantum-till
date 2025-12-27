@@ -1,0 +1,30 @@
+<p-toast />
+
+<p-dialog
+  [modal]="true"
+  header="Add a Route"
+  [visible]="visible()"
+  (visibleChange)="visibleChange.emit($event)"
+>
+  <form [formGroup]="routeForm">
+    <div class="mb-8">
+      <label for="route-name" class="text-sm font-medium text-gray-700 block mb-1">
+        Route name
+      </label>
+      <input
+        pInputText
+        id="route-name"
+        class="w-full"
+        placeholder="Enter route name"
+        autocomplete="off"
+        formControlName="name"
+        required
+      />
+    </div>
+  </form>
+
+  <div class="flex justify-end gap-2">
+    <p-button label="Cancel" severity="secondary" (click)="closeDialog()" />
+    <p-button label="Save" (click)="save()" [disabled]="routeForm.invalid || saving" />
+  </div>
+</p-dialog>

@@ -1,4 +1,4 @@
-import { Route } from './route';
+import { DistributionRoute } from './distribution-route';
 import { Vehicle } from './vehicle';
 
 // export interface Trip {
@@ -13,9 +13,9 @@ import { Vehicle } from './vehicle';
 
 export interface Trip {
   id: string;
-  userId: string;                    
-  driverName: string;                
-  route: Route;
+  userId: string;
+  driverName: string;
+  route: DistributionRoute;
   vehicle: Vehicle;
   startOdometerReading: number;
   endOdometerReading?: number;

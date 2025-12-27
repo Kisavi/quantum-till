@@ -15,7 +15,7 @@ import { MessageService } from 'primeng/api';
 
 import { Trip, CreateTripDto, EndTripDto } from '../../core/models/trip';
 import { TripService } from '../../core/services/trip.service';
-import { Route } from '../../core/models/route';
+import { DistributionRoute } from '../../core/models/distribution-route';
 import { Vehicle } from '../../core/models/vehicle';
 
 @Component({
@@ -31,7 +31,7 @@ import { Vehicle } from '../../core/models/vehicle';
 })
 export class TripsComponent implements OnInit {
   trips: Trip[] = [];
-  routes: Route[] = [];
+  routes: DistributionRoute[] = [];
   vehicles: Vehicle[] = [];
 
 

@@ -1,12 +1,12 @@
 import { Component, inject } from '@angular/core';
 import { FirebaseError } from '@angular/fire/app';
-import { Auth, createUserWithEmailAndPassword } from '@angular/fire/auth';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { ButtonDirective } from 'primeng/button';
 import { FloatLabel } from 'primeng/floatlabel';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
+import { UserService } from '../../../core/services/user.service';
 
 @Component({
   selector: 'app-register',
@@ -14,10 +14,11 @@ import { Message } from 'primeng/message';
   templateUrl: './register.component.html',
 })
 export class RegisterComponent {
-  private auth = inject(Auth);
+  private userService = inject(UserService);
   private router = inject(Router);
 
   errorMessage?: string | null;
+  loading = false;
 
   registerForm = new FormGroup({
     email: new FormControl(),
@@ -27,14 +28,15 @@ export class RegisterComponent {
   });
 
   async register() {
+    this.loading = true;
     this.errorMessage = null;
     const { email, password, displayName } = this.registerForm.value;
 
     try {
-      await createUserWithEmailAndPassword(this.auth, email, password);
-      // this.auth.updateCurrentUser({ displayName }); //TODO: Set user's display name
-      this.router.navigate(['/']);
+      await this.userService.createUser(email, password, displayName);
+      this.router.navigate(['/user-validation']);
     } catch (e) {
+      this.loading = false;
       const error = e as FirebaseError;
       this.errorMessage = error.message;
     }

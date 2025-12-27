@@ -1,5 +1,5 @@
-import { Routes } from '@angular/router';
 import { AuthGuard, redirectLoggedInTo, redirectUnauthorizedTo } from '@angular/fire/auth-guard';
+import { Routes } from '@angular/router';
 import { MainLayoutComponent } from './core/layout/main-layout/main-layout.component';
 
 export const routes: Routes = [
@@ -8,6 +8,14 @@ export const routes: Routes = [
     canActivate: [AuthGuard],
     data: { authGuardPipe: () => redirectLoggedInTo(['/dashboard']) },
     loadChildren: () => import('./features/auth/auth.routes').then((m) => m.routes),
+  },
+  {
+    path: 'user-validation',
+    data: { authGuardPipe: () => redirectUnauthorizedTo(['/auth']) },
+    loadComponent: () =>
+      import('./features/user-validation/user-validation.component').then(
+        (m) => m.UserValidationComponent,
+      ),
   },
   {
     path: '',
@@ -23,12 +31,35 @@ export const routes: Routes = [
       {
         path: 'distributors',
         loadComponent: () =>
-          import('./features/distributors/distributors.component').then((m) => m.DistributorsComponent), 
+          import('./features/distributors/distributors.component').then(
+            (m) => m.DistributorsComponent,
+          ),
       },
       {
         path: 'trips',
         loadComponent: () =>
           import('./features/trips/trips.component').then((m) => m.TripsComponent),
+      },
+      {
+        path: 'routes',
+        loadComponent: () =>
+          import('./features/distribution-routes/distribution-route-list/distribution-route-list.component').then(
+            (m) => m.DistributionRouteListComponent,
+          ),
+      },
+      {
+        path: 'customers',
+        loadComponent: () =>
+          import('./features/customers/customer-list/customer-list.component').then(
+            (m) => m.CustomerListComponent,
+          ),
+      },
+      {
+        path: 'products',
+        loadComponent: () =>
+          import('./features/products/product-list/product-list.component').then(
+            (m) => m.ProductListComponent,
+          ),
       },
       {
         path: 'assets',
@@ -51,13 +82,18 @@ export const routes: Routes = [
           import("./features/returns/returns.component").then((m) => m.ReturnsComponent),
       },
       {
+        path: 'users',
+        loadComponent: () =>
+          import('./features/users/user-list/user-list.component').then((m) => m.UserListComponent),
+      },
+      {
         path: '',
-        redirectTo: 'dashboard',
+        redirectTo: 'user-validation',
         pathMatch: 'full',
       },
       {
         path: '**',
-        redirectTo: 'dashboard',
+        redirectTo: 'user-validation',
         pathMatch: 'full',
       },
     ],

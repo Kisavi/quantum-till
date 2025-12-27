@@ -3,7 +3,7 @@
 
   <div class="flex flex-col gap-6 mb-1">
     @if (errorMessage) {
-    <p-message severity="error">{{ errorMessage }}</p-message>
+      <p-message severity="error">{{ errorMessage }}</p-message>
     }
 
     <p-floatlabel variant="on">
@@ -14,6 +14,7 @@
         pInputText
         formControlName="email"
         autocomplete="email"
+        required
       />
       <label for="email">Email</label>
     </p-floatlabel>
@@ -26,6 +27,7 @@
         pInputText
         formControlName="password"
         autocomplete="current-password"
+        required
       />
       <label for="password">Password</label>
     </p-floatlabel>
@@ -35,7 +37,7 @@
     <a routerLink="/auth/forgot-password" class="text-sm text-green-600">Forgot Password?</a>
   </div>
 
-  <button (click)="login()" pButton class="text-center w-full mb-10">
+  <button (click)="login()" pButton class="w-full mb-10" [disabled]="loginForm.invalid">
     <span pButtonLabel>Login</span>
   </button>
 

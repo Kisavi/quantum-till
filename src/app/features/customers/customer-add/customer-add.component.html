@@ -1,0 +1,73 @@
+<p-toast />
+
+<p-dialog
+  [modal]="true"
+  header="Add Customer"
+  [visible]="visible()"
+  (visibleChange)="visibleChange.emit($event)"
+>
+  <form [formGroup]="customerForm">
+    <div class="grid md:grid-cols-2 gap-4 mb-8">
+      <div class="col-span-2">
+        <label for="name" class="text-sm font-medium text-gray-700 block mb-1">Name</label>
+        <input
+          pInputText
+          id="name"
+          class="w-full"
+          placeholder="Enter customer's name"
+          formControlName="name"
+          required
+        />
+      </div>
+
+      <div>
+        <label for="route" class="text-sm font-medium text-gray-700 block mb-1">Route</label>
+        @let routes = routes$ | async;
+        <p-select
+          id="route"
+          [options]="routes!"
+          optionLabel="name"
+          [filter]="true"
+          placeholder="Select a route"
+          formControlName="route"
+          class="w-full"
+          required
+        />
+      </div>
+
+      <div>
+        <label for="location" class="text-sm font-medium text-gray-700 block mb-1">Location</label>
+        <input
+          pInputText
+          id="location"
+          class="w-full"
+          placeholder="Enter location"
+          formControlName="location"
+          required
+        />
+      </div>
+
+      <div>
+        <label for="phone" class="text-sm font-medium text-gray-700 block mb-1">Phone number</label>
+        <input
+          pInputText
+          id="phone"
+          class="w-full"
+          placeholder="Enter phone number"
+          formControlName="phoneNumber"
+          required
+        />
+      </div>
+
+      <div>
+        <label for="image" class="text-sm font-medium text-gray-700 block mb-1">Image</label>
+        <input pInputText type="file" id="image" class="w-full" formControlName="image" required />
+      </div>
+    </div>
+  </form>
+
+  <div class="flex justify-end gap-2">
+    <p-button label="Cancel" severity="secondary" (click)="closeDialog()" />
+    <p-button label="Save" (click)="save()" [disabled]="customerForm.invalid || saving" />
+  </div>
+</p-dialog>

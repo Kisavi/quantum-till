@@ -1,0 +1,53 @@
+<p-toast />
+<p-confirmdialog />
+
+<div class="flex items-center gap-4 mt-10 mb-6">
+  <div class="grow">
+    <h1 class="text-2xl font-bold text-gray-800">Products</h1>
+    <p class="text-gray-600">Manage your products</p>
+  </div>
+  <p-button (click)="openDialog()">Add Product</p-button>
+</div>
+
+<p-card>
+  @let products = products$ | async;
+
+  @if (products) {
+    <p-table [value]="products">
+      <ng-template #header>
+        <tr>
+          <th>Name</th>
+          <th>Unit Price</th>
+          <th>Pieces per Packet</th>
+          <th>Weight (Grams)</th>
+          <th>Shelf Life (Days)</th>
+          <th style="width: 5rem"></th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-product>
+        <tr>
+          <td>{{ product.name }}</td>
+          <td>{{ product.unitPrice }}</td>
+          <td>{{ product.piecesPerPacket }}</td>
+          <td>{{ product.weight }}</td>
+          <td>{{ product.shelfLife }}</td>
+          <td>
+            <p-button
+              (click)="deleteProduct(product)"
+              icon="pi pi-trash"
+              severity="secondary"
+              rounded
+            />
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">-- No products --</ng-template>
+    </p-table>
+  } @else {
+    <div class="text-center">loading...</div>
+  }
+</p-card>
+
+<app-product-add [(visible)]="dialogVisible" />
