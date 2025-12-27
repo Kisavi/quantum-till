@@ -2,14 +2,14 @@
 
 <p-dialog
   [modal]="true"
-  header="Add Customer"
+  header="Add Product"
   [visible]="visible()"
   (visibleChange)="visibleChange.emit($event)"
 >
   <form [formGroup]="productForm">
     <div class="grid md:grid-cols-2 gap-4 mb-8">
       <div class="col-span-2">
-        <label for="name" class="font-semibold block mb-1">Name</label>
+        <label for="name" class="text-sm font-medium text-gray-700 block mb-1">Name</label>
         <input
           pInputText
           id="name"
@@ -21,7 +21,7 @@
       </div>
 
       <div>
-        <label for="unit-price" class="font-semibold block mb-1">Unit Price</label>
+        <label for="unit-price" class="text-sm font-medium text-gray-700 block mb-1">Unit Price</label>
         <input
           pInputText
           type="number"
@@ -34,7 +34,7 @@
       </div>
 
       <div>
-        <label for="shelf-life" class="font-semibold block mb-1">Shelf Life (Days)</label>
+        <label for="shelf-life" class="text-sm font-medium text-gray-700 block mb-1">Shelf Life (Days)</label>
         <input
           pInputText
           type="number"
@@ -47,7 +47,7 @@
       </div>
 
       <div>
-        <label for="weight" class="font-semibold block mb-1">Weight (Grams)</label>
+        <label for="weight" class="text-sm font-medium text-gray-700 block mb-1">Weight (Grams)</label>
         <input
           pInputText
           type="number"
@@ -60,7 +60,7 @@
       </div>
 
       <div>
-        <label for="pieces" class="font-semibold block mb-1">Pieces per Packet</label>
+        <label for="pieces" class="text-sm font-medium text-gray-700 block mb-1">Pieces per Packet</label>
         <input
           pInputText
           type="number"

@@ -1,13 +1,18 @@
 <p-toast />
 
-<p-dialog header="Invite" [visible]="visible()" (visibleChange)="visibleChange.emit($event)">
+<p-dialog
+  [modal]="true"
+  header="Invite"
+  [visible]="visible()"
+  (visibleChange)="visibleChange.emit($event)"
+>
   <span class="p-text-secondary block mb-6">
     Invite someone by choosing their role and entering their email below
   </span>
 
   <form [formGroup]="invitationForm">
     <div class="mb-3">
-      <label for="role" class="font-semibold block mb-1">Role</label>
+      <label for="role" class="text-sm font-medium text-gray-700 block mb-1">Role</label>
       <p-select
         id="role"
         [options]="roles"
@@ -20,7 +25,7 @@
     </div>
 
     <div class="mb-8">
-      <label for="email" class="font-semibold block mb-1">Email</label>
+      <label for="email" class="text-sm font-medium text-gray-700 block mb-1">Email</label>
       <input
         pInputText
         id="email"

@@ -1,9 +1,16 @@
 <p-toast />
 
-<p-dialog header="Add a Route" [visible]="visible()" (visibleChange)="visibleChange.emit($event)">
+<p-dialog
+  [modal]="true"
+  header="Add a Route"
+  [visible]="visible()"
+  (visibleChange)="visibleChange.emit($event)"
+>
   <form [formGroup]="routeForm">
     <div class="mb-8">
-      <label for="route-name" class="font-semibold block mb-1">Route name</label>
+      <label for="route-name" class="text-sm font-medium text-gray-700 block mb-1">
+        Route name
+      </label>
       <input
         pInputText
         id="route-name"

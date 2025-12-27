@@ -1,10 +1,15 @@
 <p-toast />
 
-<p-dialog header="Add Customer" [visible]="visible()" (visibleChange)="visibleChange.emit($event)">
+<p-dialog
+  [modal]="true"
+  header="Add Customer"
+  [visible]="visible()"
+  (visibleChange)="visibleChange.emit($event)"
+>
   <form [formGroup]="customerForm">
     <div class="grid md:grid-cols-2 gap-4 mb-8">
       <div class="col-span-2">
-        <label for="name" class="font-semibold block mb-1">Name</label>
+        <label for="name" class="text-sm font-medium text-gray-700 block mb-1">Name</label>
         <input
           pInputText
           id="name"
@@ -16,7 +21,7 @@
       </div>
 
       <div>
-        <label for="route" class="font-semibold block mb-1">Route</label>
+        <label for="route" class="text-sm font-medium text-gray-700 block mb-1">Route</label>
         @let routes = routes$ | async;
         <p-select
           id="route"
@@ -31,7 +36,7 @@
       </div>
 
       <div>
-        <label for="location" class="font-semibold block mb-1">Location</label>
+        <label for="location" class="text-sm font-medium text-gray-700 block mb-1">Location</label>
         <input
           pInputText
           id="location"
@@ -43,7 +48,7 @@
       </div>
 
       <div>
-        <label for="phone" class="font-semibold block mb-1">Phone number</label>
+        <label for="phone" class="text-sm font-medium text-gray-700 block mb-1">Phone number</label>
         <input
           pInputText
           id="phone"
@@ -55,7 +60,7 @@
       </div>
 
       <div>
-        <label for="image" class="font-semibold block mb-1">Image</label>
+        <label for="image" class="text-sm font-medium text-gray-700 block mb-1">Image</label>
         <input pInputText type="file" id="image" class="w-full" formControlName="image" required />
       </div>
     </div>
