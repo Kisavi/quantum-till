@@ -9,6 +9,7 @@ import {
   Firestore,
   runTransaction,
   serverTimestamp,
+  Timestamp,
   updateDoc,
 } from '@angular/fire/firestore';
 import { firstValueFrom, Observable } from 'rxjs';
@@ -62,7 +63,7 @@ export class SaleService {
         id: docRef.id,
         rider: currentUser,
         customer,
-        date: serverTimestamp(),
+        date: serverTimestamp() as Timestamp,
         paymentMethod,
         items,
         totalPrice,
