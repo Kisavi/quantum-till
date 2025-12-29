@@ -18,7 +18,6 @@ export class SideMenuComponent {
   router = inject(Router);
 
   items: MenuItem[] = [
-    { separator: true },
     {
       label: 'Overview',
       items: [{ label: 'Dashboard', icon: 'pi pi-home', routerLink: '/dashboard' }],
