@@ -19,6 +19,10 @@ export class CartService {
   }
 
   addItem(item: StockItem): void {
+    if (item.quantity <= 0) {
+      return;
+    }
+
     // Check if item already exists in cart
     const existingItem = this.getExistingItem(item.product.id);
 
