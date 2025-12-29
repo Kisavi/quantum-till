@@ -44,7 +44,12 @@
             }
           </td>
           <td>
-            <p-button (click)="deleteSale(sale)" icon="pi pi-trash" severity="secondary" rounded />
+            <p-button
+              (click)="deleteSale(sale); $event.stopPropagation()"
+              icon="pi pi-trash"
+              severity="secondary"
+              rounded
+            />
           </td>
         </tr>
       </ng-template>
