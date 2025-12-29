@@ -9,12 +9,11 @@ import { InputTextModule } from 'primeng/inputtext';
 import { Menu } from 'primeng/menu';
 import { Menubar } from 'primeng/menubar';
 import { UserService } from '../../services/user.service';
-import { Card } from "primeng/card";
 
 @Component({
   selector: 'app-top-bar',
   templateUrl: './top-bar.component.html',
-  imports: [Menubar, BadgeModule, AvatarModule, InputTextModule, CommonModule, Menu, AsyncPipe, Card],
+  imports: [Menubar, BadgeModule, AvatarModule, InputTextModule, CommonModule, Menu, AsyncPipe],
 })
 export class TopBarComponent {
   private auth = inject(Auth);

@@ -14,7 +14,7 @@
 
     @if (stock) {
       @if (stock.length) {
-        <div class="grid gap-4 grid-cols-2">
+        <div class="flex flex-col lg:grid lg:grid-cols-2 gap-4">
           @for (item of stock; track item.id) {
             <app-sale-item (click)="addTocart(item)" [stockItem]="item" />
           }
@@ -34,6 +34,17 @@
   </div>
 </section>
 
-<span class="lg:hidden">
-  <p-button (click)="revealMobileCart()" icon="pi pi-shopping-cart" [text]="cart().length" />
+<p-drawer
+  header="Bottom Drawer"
+  [(visible)]="mobileCartVisible"
+  position="bottom"
+  [fullScreen]="true"
+>
+  <app-cart />
+</p-drawer>
+
+<span class="lg:hidden fixed bottom-18 right-4 z-50">
+  <button pButton severity="primary" (click)="revealMobileCart()" icon="pi pi-shopping-cart">
+    {{ cart().length }}
+  </button>
 </span>

@@ -9,13 +9,7 @@
         <div class="text-xs text-gray-400">{{ currentUser?.role }}</div>
       </div>
 
-      <p-avatar
-        [image]="
-          currentUser?.photoURL ||
-          'https://images.pexels.com/photos/669622/pexels-photo-669622.jpeg'
-        "
-        shape="circle"
-      />
+      <p-avatar [image]="currentUser?.photoURL || 'assets/img/avatar.svg'" shape="circle" />
     </div>
   </ng-template>
 </p-menubar>
