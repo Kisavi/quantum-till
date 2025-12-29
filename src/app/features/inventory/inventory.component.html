@@ -38,7 +38,7 @@
       <!-- Raw Materials Tab -->
       <p-tabpanel value="0">
         <p-card class="mt-4">
-          <p-table [value]="items" stripedRows showGridlines [scrollable]="true" scrollHeight="flex">
+          <p-table [value]="items" [loading]="isLoadingItems" stripedRows showGridlines [scrollable]="true" scrollHeight="flex">
             <ng-template pTemplate="header">
               <tr>
                 <th>Name</th>
@@ -173,9 +173,8 @@
 
 
             <ng-template pTemplate="body" let-entry>
-              <!-- <pre>{{ entry | json }}</pre> -->
               <tr class="hover:bg-gray-50">
-                <td>{{ getDateInMillis(entry.purchaseDate) | date:'dd/MM/yyyy' }}</td>
+                <td>{{ entry.purchaseDate | timestampMillis | date:'dd/MM/yyyy' }}</td>
                 <td class="font-medium">{{ entry.itemName }}</td>
                 <td>{{ entry.categoryName }}</td>
 
@@ -272,7 +271,7 @@
 
     <ng-template pTemplate="footer">
       <p-button label="Cancel" severity="secondary" (onClick)="visibleDialog = false" class="p-button-text"></p-button>
-      <p-button label="{{ isEditingEntry ? 'Save Changes' : 'Add Stock' }}" icon="pi pi-check" severity="success"
+      <p-button label="{{ isEditingEntry ? 'Save Changes' : 'Add Stock' }}" [loading]="isSavingStock" [disabled]="stockEntryForm.invalid || isSavingStock" icon="pi pi-check" severity="success"
         (onClick)="saveInventory()" [disabled]="stockEntryForm.invalid"></p-button>
     </ng-template>
   </p-dialog>
@@ -331,7 +330,7 @@
       <p-button label="Cancel" severity="secondary" (onClick)="visibleItemModal = false"
         class="p-button-text"></p-button>
       <p-button label="{{ isEditingItem ? 'Update' : 'Create' }}" icon="pi pi-check" severity="success"
-        (onClick)="saveItem()" [disabled]="rawMaterialItemForm.invalid"></p-button>
+        (onClick)="saveItem()" [disabled]="rawMaterialItemForm.invalid || isSavingItem" [disabled]="isSavingItem"></p-button>
     </ng-template>
   </p-dialog>
 

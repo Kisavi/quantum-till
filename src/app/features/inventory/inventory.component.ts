@@ -21,7 +21,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 
 
-import { combineLatest } from 'rxjs';
+import { combineLatest, finalize } from 'rxjs';
 
 import { InventoryService } from '../../core/services/inventory.service';
 import {
@@ -32,6 +32,7 @@ import {
   StockEntry,
   StockEntryDisplay,
 } from '../../core/models/raw-material';
+import { TimestampMillisPipe } from '../../core/pipes/timestamp-millis.pipe';
 
 interface SelectOption {
   label: string;
@@ -54,7 +55,8 @@ interface SelectOption {
     ProgressSpinnerModule,
     CardModule,
     ToastModule,
-    ConfirmDialogModule
+    ConfirmDialogModule,
+    TimestampMillisPipe
   ],
   providers: [MessageService, ConfirmationService],
   templateUrl: './inventory.component.html'
@@ -83,12 +85,16 @@ export class InventoryComponent implements OnInit {
   // Dropdowns
   categoryOptions: SelectOption[] = [];
   filteredItemOptions: SelectOption[] = [];
+
   isEditingEntry = false;
   editingEntryId: string | null = null;
   isEditingItem = false;
   editingItemId: string | null = null;
   isCreatingCategory = false;
   activeTab = '0';
+  isSavingStock = false;
+  isSavingItem = false;
+  isLoadingItems = true;
 
 
   constructor(
@@ -162,7 +168,7 @@ export class InventoryComponent implements OnInit {
       this.inventoryService.getStockEntries(),
       this.inventoryService.getCategories(),
       this.inventoryService.getItems()
-    ]).subscribe({
+    ]).pipe(finalize(() => { this.isLoadingItems = false,this.isLoading = false })).subscribe({
       next: ([stock, raw, categories, items]) => {
         this.inventory = stock;
         this.categories = categories;
@@ -188,23 +194,18 @@ export class InventoryComponent implements OnInit {
 
         this.stockEntries = raw;
 
-        console.log({ stock, raw, categories, items });
-
-
         this.categoryOptions = [
           { label: 'Create New Category...', value: 'new' },
           ...categories.map(c => ({ label: c.name, value: c.id }))
         ];
 
         this.updateFilteredItemOptions();
-        this.isLoading = false;
       },
       error: () => {
         this.messageService.add({
           severity: 'error',
           detail: 'Failed to load inventory data'
         });
-        this.isLoading = false;
       }
     });
   }
@@ -364,17 +365,7 @@ export class InventoryComponent implements OnInit {
   }
 
   async addNewItem(payload: Omit<RawMaterialItem, 'id'>): Promise<void> {
-
-
-    // const categoryId = this.stockEntryForm.get('categoryId')?.value || this.rawMaterialItemForm.get('categoryId')?.value;
-    // if (!categoryId || categoryId === 'new') {
-    //   this.messageService.add({
-    //     severity: 'warn',
-    //     detail: 'Select a category first'
-    //   });
-    //   return;
-    // }
-
+    this.isSavingItem = false;
     try {
       await this.inventoryService.addItem(payload);
 
@@ -391,6 +382,8 @@ export class InventoryComponent implements OnInit {
         severity: 'error',
         detail: 'Failed to create item'
       });
+    } finally {
+      this.isSavingItem = false;
     }
   }
 
@@ -475,6 +468,7 @@ export class InventoryComponent implements OnInit {
   }
 
   async createNewStockEntry(newStockEntry: Omit<StockEntry, 'id'>): Promise<void> {
+    this.isSavingStock = true;
     try {
       await this.inventoryService.addStockEntry(newStockEntry);
       this.visibleDialog = false;
@@ -490,7 +484,8 @@ export class InventoryComponent implements OnInit {
         severity: 'error',
         detail: 'Failed to add stock'
       });
-      console.error(error);
+    } finally {
+      this.isSavingStock = false;
     }
   }
 
@@ -540,29 +535,6 @@ export class InventoryComponent implements OnInit {
     }
   }
 
-  // getRawMaterialName(entry: RawMaterial): string {
-  //   const item = this.items.find(i => i.id === entry.itemId);
-  //   return item?.name || 'Unknown';
-  // }
-
-  // getQuantityAdded(entry: RawMaterial): string {
-  //   const units = Math.floor(entry.quantity / entry.unitSize);
-  //   const remainder = entry.quantity % entry.unitSize;
-
-  //   if (remainder === 0) {
-  //     return `${units} ${entry.purchaseUnit}${units !== 1 ? 's' : ''}`;
-  //   }
-
-  //   return `${units} ${entry.purchaseUnit}${units !== 1 ? 's' : ''} + ${remainder} ${entry.baseUnit}`;
-  // }
-
-  // getTotalCost(entry: RawMaterial): number {
-  //   return (entry.quantity / entry.unitSize) * entry.purchasePrice;
-  // }
-
-  getDateInMillis(timestamp: any): number {
-    return timestamp?.seconds ? timestamp.seconds * 1000 : 0;
-  }
 
   // ---------------- DELETE ITEM + HISTORY ----------------
   confirmDeleteEntry(entry: StockEntryDisplay) {
