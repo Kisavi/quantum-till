@@ -62,6 +62,10 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'sales',
+        loadChildren: () => import('./features/sales/sales.routes').then((m) => m.routes),
+      },
+      {
         path: 'assets',
         loadComponent: () =>
           import('./features/assets/assets.component').then((m) => m.AssetsComponent),
@@ -72,14 +76,14 @@ export const routes: Routes = [
           import('./features/expense/expense.component').then((m) => m.ExpenseComponent),
       },
       {
-        path: "inventory",
+        path: 'inventory',
         loadComponent: () =>
-          import("./features/inventory/inventory.component").then((m) => m.InventoryComponent),
+          import('./features/inventory/inventory.component').then((m) => m.InventoryComponent),
       },
       {
-        path: "returns",
+        path: 'returns',
         loadComponent: () =>
-          import("./features/returns/returns.component").then((m) => m.ReturnsComponent),
+          import('./features/returns/returns.component').then((m) => m.ReturnsComponent),
       },
       {
         path: 'users',

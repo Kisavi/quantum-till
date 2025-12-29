@@ -2,7 +2,7 @@ import { Product } from './product';
 
 export interface StockItem {
   product: Product;
-  manufactureDate: Date; // Current Date
-  expiryDate: Date; // Current Date + Product Shelf Life
+  manufactureDate: string; // Current Date (yyyy-MM-DD)
+  expiryDate: string; // Current Date + Product Shelf Life (yyyy-MM-DD)
   quantity: number;
 }

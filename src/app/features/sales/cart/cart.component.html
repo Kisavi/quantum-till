@@ -1,0 +1,46 @@
+<div class="flex flex-col h-full">
+  <div class="text-lg p-4">Cart</div>
+
+  @let cartItems = cart();
+
+  @if (cartItems.length) {
+    <div class="grow overflow-auto px-3">
+      @for (item of cartItems; track $index) {
+        <app-cart-item [cartItem]="item"></app-cart-item>
+      }
+    </div>
+  } @else {
+    <div class="grow my-24 text-center text-gray-500">
+      <div class="mb-4"><i class="pi pi-receipt" style="font-size: 5rem"></i></div>
+      <div class="font-semibold mb-0.5">Cart is Empty</div>
+      <div class="text-sm">Click on a product to add it to the cart</div>
+    </div>
+  }
+
+  <div class="bg-gray-100 rounded-b-lg border-t-2 border-dotted border-slate-300 p-4">
+    <div class="flex mb-3 text-sm">
+      <div class="grow">Subtotal*</div>
+      <div>{{ subTotal() | currency: 'KSh ' }}</div>
+    </div>
+
+    <div class="flex">
+      <p-button (click)="clear()" severity="contrast" class="me-3">Clear</p-button>
+      <button
+        pButton
+        (click)="checkout()"
+        severity="primary"
+        class="w-full"
+        [disabled]="cartItems.length < 1"
+      >
+        Checkout
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- <app-receipt
+  id="sales-receipt"
+  class="d-none d-print-block"
+  *ngIf="receipt"
+  [receipt]="receipt"
+></app-receipt> -->
