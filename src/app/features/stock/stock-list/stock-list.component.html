@@ -1,0 +1,51 @@
+<p-toast />
+<p-confirmdialog />
+
+<div class="flex items-center gap-4 mt-10 mb-6">
+  <div class="grow">
+    <h1 class="text-2xl font-bold text-gray-800">Products Stock</h1>
+    <p class="text-gray-600">Manage your product's stock</p>
+  </div>
+  <p-button (click)="openDialog()">Record Stock</p-button>
+</div>
+
+<p-card>
+  @let stock = stock$ | async;
+
+  @if (stock) {
+    <p-table [value]="stock">
+      <ng-template #header>
+        <tr>
+          <th>Product Name</th>
+          <th>Manufacture on</th>
+          <th>Expires on</th>
+          <th>In Stock</th>
+          <th style="width: 5rem"></th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-stockItem>
+        <tr>
+          <td>{{ stockItem.product.name }}</td>
+          <td>{{ stockItem.manufactureDate | date }}</td>
+          <td>{{ stockItem.expiryDate | date }}</td>
+          <td>{{ stockItem.quantity | number }}</td>
+          <td>
+            <p-button
+              (click)="deleteStockItem(stockItem)"
+              icon="pi pi-trash"
+              severity="secondary"
+              rounded
+            />
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">-- No stock recorded --</ng-template>
+    </p-table>
+  } @else {
+    <div class="text-center">loading...</div>
+  }
+</p-card>
+
+<app-stock-add [(visible)]="dialogVisible" />

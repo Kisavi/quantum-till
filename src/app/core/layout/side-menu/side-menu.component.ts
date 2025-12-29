@@ -46,6 +46,7 @@ export class SideMenuComponent implements OnInit {
             {
                 label: 'Inventory', items: [
                     { label: 'Products', icon: 'pi pi-tags', routerLink: '/products' },
+                    { label: 'Stock', icon: 'pi pi-tags', routerLink: '/stock' },
                     { label: 'Inventory', icon: 'pi pi-box', routerLink: '/inventory' },
                 ]
             },

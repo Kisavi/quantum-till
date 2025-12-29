@@ -62,6 +62,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'stock',
+        loadComponent: () =>
+          import('./features/stock/stock-list/stock-list.component').then(
+            (m) => m.StockListComponent,
+          ),
+      },
+      {
         path: 'sales',
         loadChildren: () => import('./features/sales/sales.routes').then((m) => m.routes),
       },
