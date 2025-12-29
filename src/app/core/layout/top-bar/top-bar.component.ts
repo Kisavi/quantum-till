@@ -1,7 +1,6 @@
 import { AsyncPipe, CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { Auth, signOut } from '@angular/fire/auth';
-import { doc, docData, Firestore } from '@angular/fire/firestore';
 import { Router } from '@angular/router';
 import { MenuItem } from 'primeng/api';
 import { AvatarModule } from 'primeng/avatar';
@@ -9,8 +8,7 @@ import { BadgeModule } from 'primeng/badge';
 import { InputTextModule } from 'primeng/inputtext';
 import { Menu } from 'primeng/menu';
 import { Menubar } from 'primeng/menubar';
-import { map, Observable } from 'rxjs';
-import { User } from '../../models/user';
+import { UserService } from '../../services/user.service';
 
 @Component({
   selector: 'app-top-bar',
@@ -19,10 +17,10 @@ import { User } from '../../models/user';
 })
 export class TopBarComponent {
   private auth = inject(Auth);
-  private firestore = inject(Firestore);
   private router = inject(Router);
+  private userService = inject(UserService);
 
-  currentUser$: Observable<User>;
+  currentUser$ = this.userService.getCurrentUser();
 
   items: MenuItem[] = [
     {
@@ -33,15 +31,6 @@ export class TopBarComponent {
       },
     },
   ];
-
-  constructor() {
-    const currentUserDocRef = doc(this.firestore, `users/${this.auth.currentUser?.uid}`);
-    this.currentUser$ = docData(currentUserDocRef).pipe(
-      map((userInfo) => {
-        return { ...this.auth.currentUser, ...userInfo } as User;
-      })
-    );
-  }
 
   signOut(): void {
     signOut(this.auth).then(() => {

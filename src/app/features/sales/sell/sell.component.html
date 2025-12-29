@@ -10,32 +10,17 @@
       />
     </div> -->
 
-    @let products = products$ | async;
+    @let stock = stock$ | async;
 
-    @if (products) {
-      @if (products.length) {
+    @if (stock) {
+      @if (stock.length) {
         <div class="grid gap-4 grid-cols-2">
-          @for (product of products; track product.id) {
-            <app-sale-item
-              (click)="
-                addTocart({
-                  quantity: 20,
-                  product: product,
-                  manufactureDate: '2024-06-01',
-                  expiryDate: '2025-06-01',
-                })
-              "
-              [stockItem]="{
-                quantity: 20,
-                product: product,
-                manufactureDate: '2024-06-01',
-                expiryDate: '2025-06-01',
-              }"
-            />
+          @for (item of stock; track item.id) {
+            <app-sale-item (click)="addTocart(item)" [stockItem]="item" />
           }
         </div>
       } @else {
-        <p class="text-center py-4 text-muted">No products</p>
+        <p class="text-center py-4 text-muted">No products in stock</p>
       }
     } @else {
       <p class="text-center">Loading...</p>

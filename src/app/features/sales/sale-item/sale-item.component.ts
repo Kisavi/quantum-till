@@ -1,6 +1,6 @@
 import { Component, input } from '@angular/core';
-import { StockItem } from '../../../core/models/stock-item';
 import { CurrencyPipe, NgClass } from '@angular/common';
+import { StockItem } from '../../../core/models/stock-item';
 
 @Component({
   selector: 'app-sale-item',

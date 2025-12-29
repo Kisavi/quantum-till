@@ -5,7 +5,9 @@ import {
   collectionData,
   CollectionReference,
   doc,
+  docData,
   Firestore,
+  getDoc,
   getDocs,
   query,
   QueryDocumentSnapshot,
@@ -100,6 +102,11 @@ export class UserService {
 
   getUsers(): Observable<User[]> {
     return collectionData(this.usersCollectionRef);
+  }
+
+  getCurrentUser(): Observable<User | undefined> {
+    const currentUserDocRef = doc(this.usersCollectionRef, this.auth.currentUser?.uid);
+    return docData(currentUserDocRef);
   }
 
   changeUserActiveStatus(uid: string, active: boolean): Promise<any> {

@@ -1,22 +1,30 @@
 import { inject, Injectable } from '@angular/core';
 import {
+  addDoc,
   collection,
   collectionData,
   CollectionReference,
   deleteDoc,
   doc,
   Firestore,
-  setDoc,
+  runTransaction,
+  serverTimestamp,
   updateDoc,
 } from '@angular/fire/firestore';
-import { Observable } from 'rxjs';
-import { Sale } from '../models/sale';
+import { firstValueFrom, Observable } from 'rxjs';
+import { CartItem } from '../models/cart-item';
+import { PaymentMethod, Sale, SaleStatus } from '../models/sale';
+import { StockService } from './stock.service';
+import { UserService } from './user.service';
+import { Customer } from '../models/customer';
 
 @Injectable({
   providedIn: 'root',
 })
 export class SaleService {
   private firestore = inject(Firestore);
+  private stockService = inject(StockService);
+  private userService = inject(UserService);
 
   salesCollRef = collection(this.firestore, 'sales') as CollectionReference<Sale>;
 
@@ -24,10 +32,45 @@ export class SaleService {
     return collectionData(this.salesCollRef);
   }
 
-  addSale(sale: Sale): Promise<void> {
-    const docRef = doc(this.salesCollRef);
-    sale.id = docRef.id;
-    return setDoc(docRef, sale);
+  async checkout(
+    customer: Customer,
+    paymentMethod: PaymentMethod,
+    items: CartItem[],
+    totalPrice: number,
+    status: SaleStatus,
+  ): Promise<void> {
+    const currentUser = await firstValueFrom(this.userService.getCurrentUser());
+
+    if (!currentUser) {
+      throw new Error('Current user not found');
+    }
+
+    // use a transaction to avoid race conditions and inconsistent stock
+    return runTransaction(this.firestore, async (transaction) => {
+      const stockCollRef = this.stockService.stockCollRef;
+
+      // Reduce stock levels of all items in the cart
+      items.forEach((cartItem) => {
+        const stockItemDocRef = doc(stockCollRef, cartItem.stockItem.id);
+        const quantity = cartItem.stockItem.quantity - cartItem.quantity;
+        transaction.update(stockItemDocRef, { quantity });
+      });
+
+      // Create and record sale
+      const docRef = doc(this.salesCollRef);
+      const sale: Sale = {
+        id: docRef.id,
+        rider: currentUser,
+        customer,
+        date: serverTimestamp(),
+        paymentMethod,
+        items,
+        totalPrice,
+        status,
+      };
+
+      transaction.set(docRef, sale);
+    });
   }
 
   updateSale(id: string, sale: Partial<Sale>): Promise<void> {
