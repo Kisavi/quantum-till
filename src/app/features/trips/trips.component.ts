@@ -1,6 +1,4 @@
-// src/app/trips/trips.component.ts
-
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
@@ -18,47 +16,96 @@ import { TripService } from '../../core/services/trip.service';
 import { DistributionRoute } from '../../core/models/distribution-route';
 import { Vehicle } from '../../core/models/vehicle';
 
+import { Auth } from '@angular/fire/auth';
+import { UserService } from '../../core/services/user.service';
+import { User } from '../../core/models/user';
+import { TimestampMillisPipe } from '../../core/pipes/timestamp-millis.pipe';
+
 @Component({
   selector: 'app-trips',
   standalone: true,
   imports: [
-    CommonModule, ReactiveFormsModule, ButtonModule, TableModule,
-    DialogModule, InputTextModule, SelectModule, CardModule,
-    ToastModule, Tooltip
+    CommonModule,
+    ReactiveFormsModule,
+    ButtonModule,
+    TableModule,
+    DialogModule,
+    InputTextModule,
+    SelectModule,
+    CardModule,
+    ToastModule,
+    Tooltip,
+    TimestampMillisPipe
   ],
   providers: [MessageService],
   templateUrl: './trips.component.html',
 })
 export class TripsComponent implements OnInit {
+  private auth = inject(Auth);
+
   trips: Trip[] = [];
-  routes: DistributionRoute[] = [];
-  vehicles: Vehicle[] = [];
+  distributors: User[] = [];
+  routes: DistributionRoute[] = [
+    { id: '1', name: 'Mariakani' },
+    { id: '2', name: 'Mombasa' },
+    { id: '3', name: 'Kilifi' },
+    { id: '4', name: 'Lamu' },
+  ];
 
+  vehicles: Vehicle[] = [
+    { id: 'v1', regNo: 'KCK 9039', model: 'Mazda Demio' },
+    { id: 'v2', regNo: 'KDB 9045', model: 'Mazda Demio' },
+    { id: 'v3', regNo: 'KCB 123A', model: 'Toyota Probox' },
+  ];
 
-  // Dialogs
+  /** Loading flags */
+  isLoadingTrips = false;
+  isCreatingTrip = false;
+  isStartingTrip = false;
+  isEndingTrip = false;
+
+  /** Dialogs */
   visibleCreateDialog = false;
   visibleStartDialog = false;
   visibleEndDialog = false;
+
   selectedTrip: Trip | null = null;
 
   createForm!: FormGroup;
   endForm!: FormGroup;
+  private userService = inject(UserService)
 
   constructor(
     private fb: FormBuilder,
     private tripService: TripService,
-    private messageService: MessageService
-  ) {}
+    private messageService: MessageService,
+  ) { }
 
   ngOnInit(): void {
     this.initForms();
     this.loadTrips();
-      this.routes = this.tripService.routes;
-  this.vehicles = this.tripService.vehicles;
+    this.getUsersExcludingCooks();
   }
+
+  getUsersExcludingCooks(): void {
+    this.userService.getUsersExcludingRole('COOK').subscribe({
+      next: (users: User[]) => {
+        this.distributors = users.filter(u => u.active && u.valid);
+      },
+      error: () => {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Failed to load users'
+        });
+      }
+    });
+  }
+
 
   private initForms(): void {
     this.createForm = this.fb.group({
+      userId: ['', Validators.required],
       routeId: ['', Validators.required],
       vehicleId: ['', Validators.required],
       startOdometerReading: [null, [Validators.required, Validators.min(1)]],
@@ -69,96 +116,178 @@ export class TripsComponent implements OnInit {
     });
   }
 
+  /** LOAD TRIPS */
   loadTrips(): void {
-    this.trips = this.tripService.getTrips();
+    this.isLoadingTrips = true;
+
+    this.tripService.getAllTrips().subscribe({
+      next: trips => {
+        this.trips = trips;
+        console.log(trips);
+        this.isLoadingTrips = false;
+      },
+      error: () => {
+        this.isLoadingTrips = false;
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Failed to load trips'
+        });
+      }
+    });
   }
 
+  /** State helpers */
   get hasOngoingTrip(): boolean {
-    return this.tripService.hasOngoingTrip(this.tripService.currentUser.uid);
+    return this.trips.some(t => t.status === 'ONGOING');
   }
 
   get hasPendingTrip(): boolean {
-    return this.tripService.hasPendingTrip(this.tripService.currentUser.uid);
+    return this.trips.some(t => t.status === 'PENDING');
   }
 
-  // CREATE TRIP
+  /** CREATE */
   showCreateDialog(): void {
-    if (this.hasOngoingTrip || this.hasPendingTrip) {
-      this.messageService.add({
-        severity: 'warn',
-        summary: 'Cannot Create',
-        detail: 'You already have a pending or ongoing trip.',
-      });
-      return;
-    }
     this.createForm.reset();
     this.visibleCreateDialog = true;
   }
 
-  createTrip(): void {
-    if (this.createForm.invalid) {
-      this.createForm.markAllAsTouched();
-      return;
-    }
+  async createTrip(): Promise<void> {
+    if (this.createForm.invalid) return;
 
-    const payload: CreateTripDto = this.createForm.value;
-    this.tripService.createTrip(payload);
-    this.messageService.add({ severity: 'success', summary: 'Trip Created', detail: 'Ready to start!' });
-    this.visibleCreateDialog = false;
-    this.loadTrips();
+    this.isCreatingTrip = true;
+
+    const dto = this.createForm.value;
+    const route = this.routes.find(r => r.id === dto.routeId)!;
+    const vehicle = this.vehicles.find(v => v.id === dto.vehicleId)!;
+    const selectedUser = this.distributors.find(u => u.uid === dto.userId);
+    console.log(selectedUser);
+    if (!selectedUser) return;
+
+    const trip: CreateTripDto = {
+      userId: selectedUser.uid,
+      driverName: selectedUser.displayName || '',
+      route,
+      vehicle,
+      startOdometerReading: dto.startOdometerReading,
+      status: 'PENDING',
+      createdOn: new Date()
+    };
+
+    try {
+      await this.tripService.createTrip(trip);
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Trip Created',
+        detail: 'Ready to start!'
+      });
+      this.visibleCreateDialog = false;
+    } finally {
+      this.isCreatingTrip = false;
+    }
   }
 
-  // START TRIP (from PENDING)
   showStartDialog(trip: Trip): void {
     if (trip.status !== 'PENDING') return;
     this.selectedTrip = trip;
     this.visibleStartDialog = true;
   }
 
-  startTrip(): void {
+  async startTrip(): Promise<void> {
     if (!this.selectedTrip) return;
-    this.tripService.startTrip(this.selectedTrip.id);
-    this.messageService.add({ severity: 'success', summary: 'On the Road!', detail: 'Trip started successfully' });
+
+    this.isStartingTrip = true;
+
+    await this.tripService.updateTrip(this.selectedTrip.id!, {
+      status: 'ONGOING',
+      startTime: new Date()
+    });
+
     this.visibleStartDialog = false;
-    this.loadTrips();
+    this.isStartingTrip = false;
   }
 
-  // END TRIP
+
   showEndDialog(trip: Trip): void {
     if (trip.status !== 'ONGOING') return;
     this.selectedTrip = trip;
     this.endForm.patchValue({
-      endOdometerReading: trip.startOdometerReading + 200
+      endOdometerReading: null
     });
     this.visibleEndDialog = true;
   }
 
-  endTrip(): void {
-    if (this.endForm.invalid || !this.selectedTrip) {
-      this.endForm.markAllAsTouched();
+  async endTrip(): Promise<void> {
+    if (!this.selectedTrip || this.endForm.invalid) return;
+
+
+    const endReading = this.endForm.value.endOdometerReading;
+    if (!endReading || endReading <= this.selectedTrip.startOdometerReading) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Invalid Odometer',
+        detail: 'End odometer must be greater than start odometer.'
+      });
       return;
     }
+    this.isEndingTrip = true;
 
-    const payload: EndTripDto = this.endForm.value;
-    this.tripService.endTrip(this.selectedTrip.id, payload);
-    this.messageService.add({ severity: 'success', summary: 'Trip Ended', detail: 'Well done!' });
+    const endTime = new Date();
+    const totalKm = endReading - this.selectedTrip.startOdometerReading;
+
+    const durationMinutes = Math.round(
+      (endTime.getTime() - new Date(this.selectedTrip.startTime).getTime()) / 60000
+    );
+
+    await this.tripService.updateTrip(this.selectedTrip.id!, {
+      endOdometerReading: endReading,
+      endTime,
+      totalKm,
+      durationMinutes,
+      status: 'ENDED'
+    });
+
     this.visibleEndDialog = false;
-    this.loadTrips();
+    this.isEndingTrip = false;
   }
 
+  /** UI helpers */
   getStatusClass(status: Trip['status']) {
     switch (status) {
-      case 'PENDING': return 'px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium';
-      case 'ONGOING': return 'px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium';
-      case 'ENDED': return 'px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium';
-      default: return 'px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-xs';
+      case 'PENDING': return 'px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs';
+      case 'ONGOING': return 'px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs';
+      case 'ENDED': return 'px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs';
+      default: return '';
     }
   }
 
-  formatDuration(minutes?: number): string {
-    if (!minutes) return '—';
-    const h = Math.floor(minutes / 60);
-    const m = minutes % 60;
-    return h > 0 ? `${h}h ${m}m` : `${m}m`;
+getDuration(start: any, end: any): string {
+  if (!start || !end) return '—';
+
+  // Convert Firestore Timestamp or Date to milliseconds
+  const startMs = start.seconds ? start.seconds * 1000 : start.getTime();
+  const endMs = end.seconds ? end.seconds * 1000 : end.getTime();
+
+  let diffMs = endMs - startMs;
+  if (diffMs < 0) return '—'; 
+
+  const minutes = Math.floor(diffMs / 60000);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+
+  const remainingHours = hours % 24;
+  const remainingMinutes = minutes % 60;
+
+  if (days > 0) {
+    return `${days}d ${remainingHours}h ${remainingMinutes}m`;
+  } else if (hours > 0) {
+    return `${hours}h ${remainingMinutes}m`;
+  } else if (minutes > 0) {
+    return `${minutes}m`;
+  } else {
+    return '1m';
   }
+}
+
+
 }

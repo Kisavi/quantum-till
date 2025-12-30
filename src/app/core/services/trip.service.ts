@@ -1,115 +1,50 @@
-// src/app/services/trip.service.ts
+import { Injectable, inject } from '@angular/core';
+import {
+  Firestore,
+  collection,
+  collectionData,
+  addDoc,
+  doc,
+  updateDoc,
+  query,
+  where,
+  orderBy,
+} from '@angular/fire/firestore';
+import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
-import { Trip, CreateTripDto, EndTripDto } from '../models/trip';
-import { Vehicle } from '../models/vehicle';
-import { DistributionRoute } from '../models/distribution-route';
+import { CreateTripDto, Trip } from '../models/trip';
 
 @Injectable({
   providedIn: 'root'
 })
 export class TripService {
-  private trips: Trip[] = [
-    {
-      id: 't1',
-      userId: 'driver1',
-      driverName: 'John A Doe',
-      route: { id: '2', name: 'Mombasa' },
-      vehicle: { id: 'v1', regNo: 'KCK 9039', model: 'Mazda Demio' },
-      startOdometerReading: 54320,
-      endOdometerReading: 54890,
-      startTime: new Date('2025-04-05T07:30:00'),
-      endTime: new Date('2025-04-05T16:45:00'),
-      totalKm: 570,
-      durationMinutes: 555,
-      status: 'ENDED',
-    }
-  ];
+  private firestore = inject(Firestore);
+  private tripsRef = collection(this.firestore, 'trips');
 
-  routes: DistributionRoute[] = [
-    { id: '1', name: 'Mariakani' },
-    { id: '2', name: 'Mombasa' },
-    { id: '3', name: 'Kilifi' },
-    { id: '4', name: 'Lamu' },
-  ];
+  getAllTrips(): Observable<Trip[]> {
+  const q = query(
+    this.tripsRef,
+    orderBy('createdOn', 'desc')
+  );
 
-  vehicles: Vehicle[] = [
-    { id: 'v1', regNo: 'KCK 9039', model: 'Mazda Demio' },
-    { id: 'v2', regNo: 'KDB 9045', model: 'Mazda Demio' },
-    { id: 'v3', regNo: 'KCB 123A', model: 'Toyota Probox' },
-  ];
+  return collectionData(this.tripsRef, { idField: 'id' }) as Observable<Trip[]>;
+}
 
-  get currentUser() {
-    return { uid: 'driver1', name: 'John A Doe' };
+  createTrip(trip: CreateTripDto) {
+    return addDoc(this.tripsRef, trip);
   }
 
-  // 1. Create Trip → PENDING
-  createTrip(dto: CreateTripDto): Trip {
-    const route = this.routes.find(r => r.id === dto.routeId)!;
-    const vehicle = this.vehicles.find(v => v.id === dto.vehicleId)!;
-
-    const newTrip: Trip = {
-      id: 't' + Date.now(),
-      userId: this.currentUser.uid,
-      driverName: this.currentUser.name,
-      route,
-      vehicle,
-      startOdometerReading: dto.startOdometerReading,
-      startTime: new Date(), // planned time
-      status: 'PENDING'
-    };
-
-    this.trips.unshift(newTrip);
-    return newTrip;
+  updateTrip(tripId: string, data: Partial<Trip>) {
+    const ref = doc(this.firestore, `trips/${tripId}`);
+    return updateDoc(ref, data);
   }
 
-  // 2. Start Trip → ONGOING
-  startTrip(tripId: string): Trip {
-    const trip = this.trips.find(t => t.id === tripId);
-    if (!trip || trip.status !== 'PENDING') {
-      throw new Error('Trip cannot be started');
-    }
-
-    trip.status = 'ONGOING';
-    trip.startTime = new Date(); // actual start time
-    return trip;
-  }
-
-  // 3. End Trip → ENDED
-  endTrip(tripId: string, dto: EndTripDto): Trip {
-    const trip = this.trips.find(t => t.id === tripId);
-    if (!trip || trip.status !== 'ONGOING') {
-      throw new Error('Trip not ongoing');
-    }
-
-    if (dto.endOdometerReading <= trip.startOdometerReading) {
-      throw new Error('End odometer must be greater');
-    }
-
-    const endTime = new Date();
-    const durationMinutes = Math.round((endTime.getTime() - trip.startTime.getTime()) / 60000);
-    const totalKm = dto.endOdometerReading - trip.startOdometerReading;
-
-    Object.assign(trip, {
-      endOdometerReading: dto.endOdometerReading,
-      endTime,
-      totalKm,
-      durationMinutes,
-      status: 'ENDED' as const
-    });
-
-    return trip;
-  }
-
-  getTrips(): Trip[] {
-    return [...this.trips];
-  }
-
-  hasOngoingTrip(userId: string): boolean {
-    return this.trips.some(t => t.userId === userId && t.status === 'ONGOING');
-  }
-
-  hasPendingTrip(userId: string): boolean {
-    return this.trips.some(t => t.userId === userId && t.status === 'PENDING');
+  getTripsByUser(userId: string): Observable<Trip[]> {
+    const q = query(
+      this.tripsRef,
+      where('userId', '==', userId),
+      orderBy('startTime', 'desc')
+    );
+    return collectionData(q, { idField: 'id' }) as Observable<Trip[]>;
   }
 }
