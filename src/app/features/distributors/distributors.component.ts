@@ -168,7 +168,6 @@ export class DistributorsComponent implements OnInit {
         dateJoined: this.toDate(distributor.dateJoined),
         dateLeft: this.toDate(distributor.dateLeft),
       });
-      // this.distributorForm.patchValue(distributor);
     } else {
       this.isEditing.set(false);
       this.selectedDistributor.set(null);
