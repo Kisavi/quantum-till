@@ -1,86 +1,57 @@
-
-
-import { Injectable } from '@angular/core';
-import { CreateExpenseDto, Expense, ExpenseReason } from '../models/expense';
+import { inject, Injectable, Injector, runInInjectionContext } from '@angular/core';
+import { 
+  Firestore, 
+  collection, 
+  collectionData, 
+  doc, 
+  setDoc, 
+  updateDoc, 
+  deleteDoc 
+} from '@angular/fire/firestore';
+import { 
+  Storage, 
+  ref, 
+  uploadString, 
+  getDownloadURL 
+} from '@angular/fire/storage';
+import { Observable } from 'rxjs';
+import { Expense, ExpenseReason } from '../models/expense';
 
 @Injectable({ providedIn: 'root' })
 export class ExpenseService {
-  private expenses: Expense[] = [
-    {
-      id: 'e1',
-      reason: 'FUEL',
-      amount: 4500,
-      attachmentUrl: 'https://images.unsplash.com/photo-1622214365189-4029b9ebed22?w=600',
-      notes: 'Trip to Mombasa',
-      userId: 'driver1',
-      userName: 'John Doe',
-      createdAt: new Date(Date.now() - 86400000),
-      updatedAt: new Date(Date.now() - 86400000),
-      status: 'APPROVED',
-      approvedBy: 'admin1',
-      approvedByName: 'Mary Admin',
-      approvedAt: new Date(Date.now() - 70000000)
-    }
-  ];
+  private expensesCol;
+
 
   readonly reasons: ExpenseReason[] = ['FUEL', 'MEALS', 'MAINTENANCE', 'STATIONERY', 'OTHER'];
 
-  getCurrentUser() {
-    return { uid: 'driver1', name: 'John Doe' }; 
+  constructor(
+    private firestore: Firestore,
+    private storage: Storage,
+    private injector: Injector
+  ) {
+    this.expensesCol = collection(this.firestore, 'expenses');
   }
 
-  createExpense(dto: CreateExpenseDto): Expense {
-    const newExpense: Expense = {
-      id: 'e' + Date.now(),
-      reason: dto.reason,
-      amount: dto.amount,
-      attachmentUrl: dto.attachmentBase64, 
-      notes: dto.notes,
-      userId: this.getCurrentUser().uid,
-      userName: this.getCurrentUser().name,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      status: 'PENDING'
-    };
-    this.expenses.unshift(newExpense);
-    return newExpense;
+  // Get all expenses
+  getExpenses(): Observable<Expense[]> {
+    return collectionData(this.expensesCol, { idField: 'id' }) as Observable<Expense[]>;
   }
 
-  approveExpense(id: string, adminName: string): Expense {
-    const exp = this.expenses.find(e => e.id === id);
-    if (!exp) throw new Error('Not found');
-    exp.status = 'APPROVED';
-    exp.approvedBy = 'admin1';
-    exp.approvedByName = adminName;
-    exp.approvedAt = new Date();
-    exp.updatedAt = new Date();
-    return exp;
+  // Add expense
+  async addExpense(expense: Omit<Expense, 'id'>): Promise<string> {
+    const ref = doc(this.expensesCol);
+    await setDoc(ref, expense);
+    return ref.id;
   }
 
-  rejectExpense(id: string, reason: string, adminName: string): Expense {
-    const exp = this.expenses.find(e => e.id === id);
-    if (!exp) throw new Error('Not found');
-    exp.status = 'REJECTED';
-    exp.rejectionReason = reason;
-    exp.approvedBy = 'admin1';
-    exp.approvedByName = adminName;
-    exp.updatedAt = new Date();
-    return exp;
+  // Update expense
+  async updateExpense(id: string, changes: Partial<Omit<Expense, 'id'>>): Promise<void> {
+    await updateDoc(doc(this.firestore, 'expenses', id), changes);
   }
 
-  getAllExpenses(): Expense[] {
-    return [...this.expenses];
+  // Delete expense
+  async deleteExpense(id: string): Promise<void> {
+    await deleteDoc(doc(this.firestore, 'expenses', id));
   }
 
-  getTotalPending(): number {
-    return this.expenses
-      .filter(e => e.status === 'PENDING')
-      .reduce((sum, e) => sum + e.amount, 0);
-  }
-
-  getTotalApproved(): number {
-    return this.expenses
-      .filter(e => e.status === 'APPROVED')
-      .reduce((sum, e) => sum + e.amount, 0);
-  }
 }

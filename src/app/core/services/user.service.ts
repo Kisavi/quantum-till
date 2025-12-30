@@ -106,4 +106,14 @@ export class UserService {
     const userDocRef = doc(this.usersCollectionRef, uid);
     return updateDoc(userDocRef, { active });
   }
+
+  getUsersExcludingRole(role: RoleName): Observable<User[]> {
+  const q = query(
+    this.usersCollectionRef,
+    where('role', 'not-in', [role])
+  );
+
+  return collectionData(q, { idField: 'uid' }) as Observable<User[]>;
+}
+
 }
