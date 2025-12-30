@@ -59,7 +59,7 @@ export class TripsComponent implements OnInit {
   ];
 
   /** Loading flags */
-  isLoadingTrips = false;
+  isLoadingTrips = true;
   isCreatingTrip = false;
   isStartingTrip = false;
   isEndingTrip = false;
@@ -118,8 +118,6 @@ export class TripsComponent implements OnInit {
 
   /** LOAD TRIPS */
   loadTrips(): void {
-    this.isLoadingTrips = true;
-
     this.tripService.getAllTrips().subscribe({
       next: trips => {
         this.trips = trips;

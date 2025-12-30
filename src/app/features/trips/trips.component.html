@@ -12,7 +12,7 @@
 
   <!-- Table -->
   <p-card>
-    <p-table [value]="trips" [scrollable]="true" stripedRows showGridlines scrollHeight="flex"
+    <p-table [value]="trips" [scrollable]="true" [loading]="isLoadingTrips" stripedRows showGridlines scrollHeight="flex"
       [tableStyle]="{'min-width': '80rem'}">
       <ng-template pTemplate="header">
         <tr>

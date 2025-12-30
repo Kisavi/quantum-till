@@ -20,7 +20,7 @@
   <!-- Distributors Table -->
   <p-card>
     <p-table
-        [scrollable]="true"  stripedRows="true" showGridlines="true"
+        [scrollable]="true"  stripedRows="true" showGridlines="true" [loading]="isLoadingDistributors"
         scrollHeight="flex" [value]="distributors()" [tableStyle]="{'min-width': '80rem'}">
       <ng-template pTemplate="header">
         <tr>
@@ -38,6 +38,8 @@
         </tr>
       </ng-template>
       <ng-template pTemplate="body" let-distributor>
+                <!-- <pre>{{ distributor | json }}</pre> -->
+
         <tr class="hover:bg-gray-50">
           <td class="font-medium whitespace-nowrap">{{ distributor.fullName }}</td>
           <td class="whitespace-nowrap">{{ distributor.phone }}</td>
@@ -50,8 +52,8 @@
               {{ distributor.status | titlecase }}
             </span>
           </td>
-          <td>{{ distributor.dateJoined | date:'dd/MM/yyyy' }}</td>
-          <td>{{ distributor.dateLeft ? (distributor.dateLeft | date:'dd/MM/yyyy') : 'N/A' }}</td>
+          <td>{{ distributor.dateJoined | timestampMillis | date:'dd/MM/yyyy' }}</td>
+          <td>{{ distributor.dateLeft ? (distributor.dateLeft | timestampMillis | date:'dd/MM/yyyy') : 'N/A' }}</td>
           <td class="flex space-x-1">
             <div class="flex space-x-2">
             <p-button 
@@ -59,7 +61,7 @@
               severity="info" 
               size="small" 
               rounded 
-              (onClick)="viewImage('/assets/img/' + distributor.idFront)"
+              (onClick)="viewImage(distributor.idFront)"
               pTooltip="View ID Front">
             </p-button>
             <p-button 
@@ -67,7 +69,7 @@
               severity="info" 
               size="small" 
               rounded 
-              (onClick)="viewImage('/assets/img/' + distributor.idBack)"
+              (onClick)="viewImage(distributor.idBack)"
               pTooltip="View ID Back">
             </p-button>
             <p-button 
@@ -75,7 +77,7 @@
               severity="info" 
               size="small" 
               rounded 
-              (onClick)="viewImage('/assets/img/' + distributor.profilePicture)"
+              (onClick)="viewImage(distributor.profilePicture)"
               pTooltip="View Profile Picture">
             </p-button>
         </div>
@@ -102,11 +104,19 @@
           </td>
         </tr>
       </ng-template>
-      <ng-template pTemplate="emptymessage">
-        <tr>
-          <td colspan="11" class="text-center py-8 text-gray-500">No distributors found. Add one to get started!</td>
-        </tr>
-      </ng-template>
+
+       <ng-template pTemplate="emptymessage">
+              <tr>
+                <td colspan="11" class="text-center py-20">
+                  <div class="flex flex-col items-center gap-6 text-gray-500">
+                    <i class="pi pi-history text-8xl opacity-30"></i>
+                    <p class="text font-medium">No distributors found</p>
+                  </div>
+                </td>
+              </tr>
+            </ng-template>
+
+
     </p-table>
   </p-card>
 
@@ -293,7 +303,7 @@
           <input type="file" id="profilePicture" accept="image/*" (change)="onFileChange($event, 'profilePicture')" class="w-full p-2 border rounded" [ngClass]="{'p-invalid': isInvalid('profilePicture')}" />
           @if (distributorForm.get('profilePicture')?.value) {
             <div class="flex items-center gap-2 mt-2">
-              <img [src]="getPreviewUrl('profilePicture')" [alt]="distributorForm.get('profilePicture')?.value" class="w-20 h-20 rounded object-contain border bg-gray-50" />
+              <img [src]="getPreviewUrl('profilePicture')" [alt]="distributorForm.get('profilePicture')?.value" class="w-20 h-20 rounded object-contain" />
               <p-button icon="pi pi-times" severity="danger" size="small" (onClick)="onClearImage('profilePicture')" pTooltip="Clear Image"></p-button>
             </div>
           }
@@ -312,7 +322,7 @@
         (onClick)="hideDialog()"
         class="p-button-text">
       </p-button>
-      <button pButton severity="success" (click)="saveDistributor()" type="button" [disabled]="distributorForm.invalid">
+      <button pButton severity="success" (click)="saveDistributor()" [loading]="isSavingDistributor" type="button" [disabled]="distributorForm.invalid || isSavingDistributor">
         <span pButtonLabel>Save</span>
         <i class="pi pi-check p-button-icon-left"></i>
       </button>
