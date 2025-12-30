@@ -1,1 +1,127 @@
-<p>returns works!</p>
+<p-card class="mb-4 flex justify-between items-center">
+    <div class="text-gray-700 text-lg font-semibold">
+        Total Returns Amount: <span class="text-green-600">{{ totalReturnsAmount | currency:'KES':'symbol':'1.0-0'
+            }}</span>
+    </div>
+    <p-button label="Take Return" icon="pi pi-plus" (onClick)="showTakeReturnDialog()"></p-button>
+</p-card>
+
+<p-card class="mb-4">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div class="flex flex-col gap-1 w-full md:w-64">
+            <label class="text-sm font-medium text-gray-700">Filter by Customer</label>
+            <p-select [options]="customerOptions" optionLabel="label" optionValue="value" (onChange)="applyFilters()"
+                [(ngModel)]="selectedCustomerId" showClear [filter]="true" placeholder="Select Customer">
+            </p-select>
+        </div>
+        <div class="flex flex-col gap-1 w-full md:w-64">
+            <label class="text-sm font-medium text-gray-700">Filter by Date Range</label>
+            <p-datePicker [selectionMode]="'range'" placeholder="Select Date Range" [(ngModel)]="dateRange" showIcon
+                (ngModelChange)="applyFilters()" class="w-full"></p-datePicker>
+        </div>
+    </div>
+</p-card>
+
+<p-card>
+    <p-table [value]="filteredReturns" [scrollable]="true" scrollHeight="flex" 
+        [loading]="isLoadingReturns" [tableStyle]="{'min-width': '60rem'}">
+        <ng-template pTemplate="header">
+            <tr>
+                <th>Customer</th>
+                <th>Product</th>
+                <th>Amount</th>
+                <th>Quantity</th>
+                <th>Manufactured Date</th>
+                <th>Expiry Date</th>
+                <th>Return Date</th>
+                <th>Return Reason</th>
+                <th>Actions</th>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-returnItem>
+            <!-- <pre>{{ returnItem | json }}</pre> -->
+            <tr>
+                <td>{{ returnItem.customer?.name || returnItem.customerName || 'Other' }}</td>
+                <td>{{ returnItem.product.name }}</td>
+                <td>{{ (returnItem.product.unitPrice * returnItem.quantity) | currency:'KES':'symbol':'1.0-0' }}</td>
+                <td>{{ formatQuantity(returnItem) }}</td>
+                <td>
+                    {{ getManufacturedDate(returnItem) | date:'dd/MM/yyyy' }}
+                </td>
+                <td>{{ returnItem.expiryDate | timestampMillis | date:'dd/MM/yyyy' }}</td>
+
+                <td>{{ returnItem.returnDate | timestampMillis | date:'dd/MM/yyyy' }}</td>
+                <td>
+                    <div class="flex flex-col gap-1">
+                        <span>{{ returnItem.reason | titlecase }}</span>
+                        <p-tag *ngIf="getExpiryDeviationMessage(returnItem)"
+                            [value]="getExpiryDeviationMessage(returnItem)!"
+                            [severity]="getExpiryDeviationSeverity(returnItem)"
+                            styleClass="text-[10px] px-1 py-0 w-fit" [rounded]="true"> 
+                        </p-tag>
+                    </div>
+                </td>
+                <td>
+                    <div class="flex gap-2">
+                        <p-button icon="pi pi-pencil" (onClick)="editReturn(returnItem)" size="small"
+                            rounded></p-button>
+                        <p-button icon="pi pi-trash" (onClick)="confirmDeleteReturn(returnItem)" size="small"
+                            severity="danger" rounded></p-button>
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+            <tr>
+                <td colspan="7" class="text-center py-20">
+                    <div class="flex flex-col items-center gap-6 text-gray-500">
+                        <i class="pi pi-box text-8xl opacity-30"></i>
+                        <p class="text font-medium">No returns found</p>
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</p-card>
+
+<!-- Take Return Dialog -->
+<p-dialog header="{{ editingReturnId ? 'Edit Return' : 'Take Return' }}" [(visible)]="showReturnDialog" [modal]="true"
+    [closable]="true">
+    <form [formGroup]="returnForm" (ngSubmit)="submitReturn()">
+        <div class="flex flex-col gap-4">
+            <p-select formControlName="customerId" [options]="customerOptions" optionLabel="label" optionValue="value"
+                placeholder="Select Customer" showClear></p-select>
+
+            <p-select formControlName="productId" [options]="products" optionLabel="name" optionValue="id"
+                placeholder="Select Product" (onChange)="onProductChange($event.value)"></p-select>
+
+            <div class="flex gap-2" *ngIf="showPiecesInput">
+                <input type="number" formControlName="packets" placeholder="Packets" class="p-inputtext w-1/2">
+                <input type="number" formControlName="pieces" placeholder="Pieces" class="p-inputtext w-1/2">
+            </div>
+            <div *ngIf="!showPiecesInput">
+                <input type="number" formControlName="packets" placeholder="Quantity" class="p-inputtext w-full">
+            </div>
+
+            <!-- In dialog form -->
+            <div class="flex flex-col gap-1">
+                <label for="expiryDate" class="text-sm font-medium text-gray-700">
+                    Expiry Date <span class="text-red-600">*</span>
+                </label>
+                <p-datepicker id="expiryDate" formControlName="expiryDate" [showIcon]="true"
+                    placeholder="Select expiry date from product" class="w-full">
+                </p-datepicker>
+                @if (returnForm.get('expiryDate')?.invalid && returnForm.get('expiryDate')?.touched) {
+                <small class="text-red-600">Expiry date is required</small>
+                }
+            </div>
+            <p-select formControlName="reason" [options]="returnReasonOptions" placeholder="Return Reason"></p-select>
+            <p-button label="{{ editingReturnId ? 'Edit Return' : 'Submit Return' }}" type="submit"
+                [loading]="isSavingReturn"></p-button>
+        </div>
+    </form>
+</p-dialog>
+<p-confirmdialog />
+<p-toast></p-toast>
