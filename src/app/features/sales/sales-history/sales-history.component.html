@@ -1,0 +1,64 @@
+<p-toast />
+<p-confirmdialog />
+
+<div class="flex items-center gap-4 mt-10 mb-6">
+  <div class="grow">
+    <h1 class="text-2xl font-bold text-gray-800">Sales History</h1>
+    <p class="text-gray-600">View past sales</p>
+  </div>
+</div>
+
+<p-card>
+  @let sales = sales$ | async;
+
+  @if (sales) {
+    <p-table [value]="sales">
+      <ng-template #header>
+        <tr>
+          <th>Date</th>
+          <th>Sold By</th>
+          <th>Sold To</th>
+          <th>No. of Items</th>
+          <th>Total Price</th>
+          <th>Payment Method</th>
+          <th>Status</th>
+          <th style="width: 5rem"></th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-sale>
+        <tr (click)="viewSale(sale)" class="cursor-pointer">
+          <td>{{ sale.date.seconds * 1000 | date }}</td>
+          <td>{{ sale.rider.displayName }}</td>
+          <td>{{ sale.customer.name }}</td>
+          <td>{{ sale.items.length }}</td>
+          <td>{{ sale.totalPrice | currency }}</td>
+          <td>{{ sale.paymentMethod }}</td>
+          <td>
+            @if (sale.status === 'COMPLETED') {
+              <p-badge severity="success" [value]="sale.status" />
+            } @else if (sale.status === 'PENDING') {
+              <p-badge severity="warn" [value]="sale.status" />
+            } @else {
+              <p-badge severity="danger" [value]="sale.status" />
+            }
+          </td>
+          <td>
+            <p-button
+              (click)="deleteSale(sale); $event.stopPropagation()"
+              icon="pi pi-trash"
+              severity="secondary"
+              rounded
+            />
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">-- No sales --</ng-template>
+    </p-table>
+  } @else {
+    <div class="text-center">loading...</div>
+  }
+</p-card>
+
+<app-sale-details [(visible)]="dialogVisible" [sale]="sale" />

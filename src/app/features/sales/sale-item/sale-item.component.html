@@ -1,0 +1,23 @@
+@let product = stockItem()?.product;
+@let stockSize = stockItem()?.quantity;
+@let isOutOfStock = stockSize === 0;
+
+<div
+  class="shadow rounded-lg p-4 cursor-pointer select-none bg-white hover:bg-gray-100"
+  [ngClass]="{ 'cursor-not-allowed text-gray-400 hover:bg-white': isOutOfStock }"
+>
+  <div class="flex items-end">
+    <div class="grow font-medium text-gray-800">
+      <div class="mb-1">{{ product?.name }}</div>
+      <div class="text-sm top-1.5">{{ product?.unitPrice | currency: 'KSh ' }}</div>
+    </div>
+
+    @if (isOutOfStock) {
+      <div class="text-red-600">Out of stock</div>
+    } @else {
+      <div class="text-gray-700" [ngClass]="{ 'text-orange-400': stockSize && stockSize < 5 }">
+        {{ stockSize }} in stock
+      </div>
+    }
+  </div>
+</div>

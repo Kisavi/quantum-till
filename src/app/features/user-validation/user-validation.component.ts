@@ -7,6 +7,7 @@ import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { User } from '../../core/models/user';
 import { Button } from 'primeng/button';
+import { UserService } from '../../core/services/user.service';
 
 /**
  * Validates a user's eligibility to use the system. Used instead of a Guard to save on document reads.
@@ -21,12 +22,12 @@ export class UserValidationComponent implements OnInit {
   private auth = inject(Auth);
   firestore = inject(Firestore);
   router = inject(Router);
+  private userService = inject(UserService);
 
   currentUser$?: Observable<User | DocumentData | undefined>;
 
   ngOnInit(): void {
-    const currentUserDocRef = doc(this.firestore, `users/${this.auth.currentUser?.uid}`);
-    this.currentUser$ = docData(currentUserDocRef).pipe(
+    this.currentUser$ = this.userService.getCurrentUser().pipe(
       tap((user) => {
         if ((user as User)?.valid) {
           this.router.navigate(['/dashboard']);
