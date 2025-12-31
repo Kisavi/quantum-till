@@ -1,0 +1,14 @@
+<div
+  class="lg:hidden fixed bottom-0 left-0 w-full bg-white border-t border-gray-50 p-3 flex items-center justify-between gap-2"
+>
+  @for (item of menuItems; track $index) {
+    <div
+      [routerLink]="item.routerLink"
+      routerLinkActive="text-primary"
+      class="flex flex-col justify-center items-center gap-1 font-medium text-xs text-gray-700"
+    >
+      <div><i class="{{ item.icon }}"></i></div>
+      <div>{{ item.label }}</div>
+    </div>
+  }
+</div>

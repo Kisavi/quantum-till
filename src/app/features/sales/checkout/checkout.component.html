@@ -1,0 +1,58 @@
+<p-toast />
+
+<p-dialog
+  [modal]="true"
+  header="Confirm Payment"
+  [visible]="visible()"
+  (visibleChange)="visibleChange.emit($event)"
+  styleClass="w-full lg:w-120"
+>
+  <form [formGroup]="checkoutForm">
+    <div class="mb-3">
+      @let customers = customers$ | async;
+      <label for="customers" class="text-sm font-medium text-gray-700 block mb-1"> Customer </label>
+      <p-select
+        id="customers"
+        [options]="customers!"
+        [loading]="!customers"
+        optionLabel="name"
+        [filter]="true"
+        placeholder="Select customer"
+        formControlName="customer"
+        class="w-full"
+        required
+      />
+    </div>
+
+    <div class="mb-3">
+      <label for="payment-method" class="text-sm font-medium text-gray-700 block mb-1">
+        Payment Method
+      </label>
+      <p-select
+        id="payment-method"
+        [options]="paymentMethods"
+        [filter]="true"
+        placeholder="Select payment method"
+        formControlName="paymentMethod"
+        class="w-full"
+        required
+      />
+    </div>
+
+    <div
+      class="bg-gray-50 rounded-lg border-2 border-dotted border-slate-300 p-3 my-4 flex font-bold"
+    >
+      <div class="grow">Total</div>
+      <div>{{ subTotal() | currency }}</div>
+    </div>
+
+    <div class="flex justify-end gap-2">
+      <div class="grow">
+        <!-- <p-checkbox inputId="print" [binary]="true" (onChange)="setReceiptPrinting($event)" />
+        <label for="print" class="ml-2">Print receipt</label> -->
+      </div>
+      <p-button label="Cancel" severity="secondary" (click)="closeDialog()" />
+      <p-button label="Finish" (click)="checkout()" [disabled]="checkoutForm.invalid || saving" />
+    </div>
+  </form>
+</p-dialog>

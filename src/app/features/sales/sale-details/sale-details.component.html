@@ -1,0 +1,68 @@
+<p-toast />
+
+<p-dialog
+  [modal]="true"
+  header="Sale Details"
+  [visible]="visible()"
+  (visibleChange)="visibleChange.emit($event)"
+  styleClass="min-w-120"
+>
+  <div class="bg-gray-50 rounded mb-5">
+    @for (item of sale()?.items; track $index) {
+      <div
+        class="flex justify-between font-semibold mb-2 p-3 border-b border-dotted border-slate-200 last:border-0"
+      >
+        <div>{{ item.stockItem.product.name }} x {{ item.quantity }}</div>
+        <div class="font-semibold">
+          {{ item.stockItem.product.unitPrice * item.quantity | currency }}
+        </div>
+      </div>
+    }
+  </div>
+
+  <div class="bg-gray-50 rounded-lg border-2 border-dotted border-slate-300 p-3 my-4 text-sm">
+    <div class="flex justify-between mb-1">
+      <div class="font-medium text-gray-700">Customer</div>
+      <div>{{ sale()?.customer?.name }}</div>
+    </div>
+
+    <div class="flex justify-between mb-1">
+      <div class="font-medium text-gray-700">Sold By</div>
+      <div>{{ sale()?.rider?.displayName }}</div>
+    </div>
+
+    <div class="flex justify-between mb-1">
+      <div class="font-medium text-gray-700">Payment Method</div>
+      <div>{{ sale()?.paymentMethod }}</div>
+    </div>
+
+    <div class="flex justify-between mb-1">
+      <div class="font-medium text-gray-700">Status</div>
+      @let status = sale()?.status;
+      <div
+        class="text-xs font-medium"
+        [ngClass]="{
+          'text-green-600': status === 'COMPLETED',
+          'text-red-600': status === 'CANCELLED',
+          'text-yellow-600': status === 'PENDING',
+        }"
+      >
+        {{ status }}
+      </div>
+    </div>
+
+    <div class="flex justify-between mb-1">
+      <div class="font-medium text-gray-700">Date</div>
+      <div>{{ (sale()?.date?.seconds || 0) * 1000 | date }}</div>
+    </div>
+
+    <div class="flex justify-between mb-1">
+      <div class="font-medium text-gray-700">Total</div>
+      <div class="font-bold">{{ sale()?.totalPrice | currency }}</div>
+    </div>
+  </div>
+
+  <div class="text-end">
+    <p-button label="Cancel" severity="secondary" (click)="closeDialog()" />
+  </div>
+</p-dialog>

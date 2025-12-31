@@ -1,0 +1,60 @@
+<p-toast />
+
+<p-dialog
+  [modal]="true"
+  header="Record Stock"
+  [visible]="visible()"
+  (visibleChange)="visibleChange.emit($event)"
+>
+  <form [formGroup]="stockForm">
+    <div class="grid md:grid-cols-2 gap-4 mb-8">
+      <div class="col-span-2">
+        <label for="role" class="text-sm font-medium text-gray-700 block mb-1">Product</label>
+        @let products = products$ | async;
+        <p-select
+          id="role"
+          [options]="products!"
+          [loading]="!products"
+          optionLabel="name"
+          [filter]="true"
+          placeholder="Select a product"
+          formControlName="product"
+          class="w-full"
+          required
+        />
+      </div>
+
+      <div>
+        <label for="mfg-date" class="text-sm font-medium text-gray-700 block mb-1"
+          >Manufacture Date</label
+        >
+        <input
+          pInputText
+          type="date"
+          id="mfg-date"
+          class="w-full"
+          formControlName="manufactureDate"
+          required
+        />
+      </div>
+
+      <div>
+        <label for="quantity" class="text-sm font-medium text-gray-700 block mb-1">Quantity</label>
+        <input
+          pInputText
+          type="number"
+          id="quantity"
+          class="w-full"
+          placeholder="Enter stock quantity"
+          formControlName="quantity"
+          required
+        />
+      </div>
+    </div>
+  </form>
+
+  <div class="flex justify-end gap-2">
+    <p-button label="Cancel" severity="secondary" (click)="closeDialog()" />
+    <p-button label="Save" (click)="save()" [disabled]="stockForm.invalid || saving" />
+  </div>
+</p-dialog>
