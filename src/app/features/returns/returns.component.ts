@@ -63,7 +63,7 @@ export class ReturnsComponent implements OnInit {
   showReturnDialog = false;
   showPiecesInput = false;
 
-  returnReasons: ReturnReason[] = ['EXPIRED', 'DAMAGED', 'SPOILT', 'WRONG_ITEM', 'OTHER'];
+  returnReasons: ReturnReason[] = ['EXPIRED', 'DAMAGED', 'SPOILT', 'UNSOLD', 'WRONG_ITEM', 'OTHER'];
   returnReasonOptions = this.returnReasons.map(r => ({ label: r, value: r }));
 
   private currentUserId = 'ADMIN_UID';

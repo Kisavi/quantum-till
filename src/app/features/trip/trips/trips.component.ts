@@ -11,15 +11,16 @@ import { ToastModule } from 'primeng/toast';
 import { Tooltip } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
 
-import { Trip, CreateTripDto, EndTripDto } from '../../core/models/trip';
-import { TripService } from '../../core/services/trip.service';
-import { DistributionRoute } from '../../core/models/distribution-route';
-import { Vehicle } from '../../core/models/vehicle';
+import { Trip, CreateTripDto, EndTripDto } from '../../../core/models/trip';
+import { TripService } from '../../../core/services/trip.service';
+import { DistributionRoute } from '../../../core/models/distribution-route';
+import { Vehicle } from '../../../core/models/vehicle';
 
 import { Auth } from '@angular/fire/auth';
-import { UserService } from '../../core/services/user.service';
-import { User } from '../../core/models/user';
-import { TimestampMillisPipe } from '../../core/pipes/timestamp-millis.pipe';
+import { UserService } from '../../../core/services/user.service';
+import { User } from '../../../core/models/user';
+import { TimestampMillisPipe } from '../../../core/pipes/timestamp-millis.pipe';
+import { TripStockAllocationComponent } from './trip-stock-allocation/trip-stock-allocation.component';
 
 @Component({
   selector: 'app-trips',
@@ -35,7 +36,8 @@ import { TimestampMillisPipe } from '../../core/pipes/timestamp-millis.pipe';
     CardModule,
     ToastModule,
     Tooltip,
-    TimestampMillisPipe
+    TimestampMillisPipe,
+    TripStockAllocationComponent
   ],
   providers: [MessageService],
   templateUrl: './trips.component.html',
@@ -68,6 +70,8 @@ export class TripsComponent implements OnInit {
   visibleCreateDialog = false;
   visibleStartDialog = false;
   visibleEndDialog = false;
+
+  visibleAllocateDialog = false;
 
   selectedTrip: Trip | null = null;
 
@@ -285,6 +289,11 @@ getDuration(start: any, end: any): string {
   } else {
     return '1m';
   }
+}
+
+showAllocateDialog(trip: Trip): void {
+  this.selectedTrip = trip;
+  this.visibleAllocateDialog = true;
 }
 
 

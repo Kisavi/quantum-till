@@ -142,3 +142,20 @@
 
   <p-toast></p-toast>
 </div>
+
+<!-- allocate stock component -->
+<p-dialog
+  header="Allocate Stock"
+  [(visible)]="visibleAllocateDialog"
+  [modal]="true"
+  [style]="{ width: '60rem' }"
+  [closable]="false">
+
+  <app-trip-stock-allocation
+    *ngIf="selectedTrip"
+    [selectedTrip]="selectedTrip"
+    (saved)="visibleAllocateDialog=false"
+    (cancel)="visibleAllocateDialog=false">
+  </app-trip-stock-allocation>
+
+</p-dialog>

@@ -38,7 +38,7 @@ export const routes: Routes = [
       {
         path: 'trips',
         loadComponent: () =>
-          import('./features/trips/trips.component').then((m) => m.TripsComponent),
+          import('./features/trip/trips/trips.component').then((m) => m.TripsComponent),
       },
       {
         path: 'routes',

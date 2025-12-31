@@ -1,0 +1,66 @@
+<p-toast></p-toast>
+
+<div class="flex flex-col gap-4">
+  <h3 class="text-lg font-semibold">
+    Allocate Stock for {{ trip.driverName }}
+  </h3>
+
+  <p-table
+    [value]="warehouseStock"
+    stripedRows
+    showGridlines
+    [tableStyle]="{'min-width': '50rem'}">
+
+    <ng-template pTemplate="header">
+      <tr>
+        <th>Product</th>
+        <th class="text-right">Available</th>
+        <th class="text-right">Allocate</th>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-item>
+      <tr>
+        <td>{{ item.productName }}</td>
+
+        <td class="text-right font-medium">
+          {{ item.availableQty }}
+        </td>
+
+        <td class="text-right">
+          <input
+            pInputText
+            type="number"
+            min="0"
+            [max]="item.availableQty"
+            [(ngModel)]="item.allocateQty"
+            class="w-24 text-right" />
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="3" class="text-center py-10 text-gray-500">
+          No stock available
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+
+  <div class="flex justify-end gap-3 mt-4">
+    <p-button
+      label="Cancel"
+      severity="secondary"
+      (onClick)="cancel.emit()"
+      class="p-button-text">
+    </p-button>
+
+    <p-button
+      label="Allocate Stock"
+      icon="pi pi-check"
+      [loading]="isSaving"
+      (onClick)="saveAllocation()">
+    </p-button>
+  </div>
+</div>
