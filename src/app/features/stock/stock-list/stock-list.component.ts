@@ -9,6 +9,7 @@ import { Toast } from 'primeng/toast';
 import { StockItem } from '../../../core/models/stock-item';
 import { StockService } from '../../../core/services/stock.service';
 import { StockAddComponent } from '../stock-add/stock-add.component';
+import { Product } from '../../../core/models/product';
 
 @Component({
   selector: 'app-stock-list',
@@ -20,9 +21,8 @@ import { StockAddComponent } from '../stock-add/stock-add.component';
     TableModule,
     StockAddComponent,
     AsyncPipe,
-    DatePipe,
-    DecimalPipe,
-  ],
+    DatePipe
+    ],
   templateUrl: './stock-list.component.html',
   providers: [MessageService, ConfirmationService],
 })
@@ -71,5 +71,20 @@ export class StockListComponent {
         }
       },
     });
+  }
+
+  formatQuantity(quantity: number, product: Product): string {
+    if (product.piecesPerPacket <= 1) {
+      return `${quantity} packet${quantity > 1 ? 's' : ''}`;
+    }
+
+    const packets = Math.floor(quantity / product.piecesPerPacket);
+    const pieces = quantity % product.piecesPerPacket;
+
+    if (packets === 0 && pieces === 0) return '0';
+    if (packets === 0) return `${pieces} piece${pieces > 1 ? 's' : ''}`;
+    if (pieces === 0) return `${packets} packet${packets > 1 ? 's' : ''}`;
+    
+    return `${packets} packet${packets > 1 ? 's' : ''} + ${pieces} piece${pieces > 1 ? 's' : ''}`;
   }
 }

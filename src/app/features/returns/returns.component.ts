@@ -17,9 +17,9 @@ import { Product } from '../../core/models/product';
 import { ReturnsService } from '../../core/services/returns.service';
 import { CustomerService } from '../../core/services/customer.service';
 import { ProductService } from '../../core/services/product.service';
+import { StockService } from '../../core/services/stock.service';
 import { TimestampMillisPipe } from '../../core/pipes/timestamp-millis.pipe';
 import { TagModule } from 'primeng/tag';
-
 
 @Component({
   selector: 'app-returns',
@@ -70,7 +70,8 @@ export class ReturnsComponent implements OnInit {
 
   private customerService = inject(CustomerService);
   private productService = inject(ProductService);
-  private confirmationService = inject(ConfirmationService)
+  private stockService = inject(StockService);
+  private confirmationService = inject(ConfirmationService);
 
   returnForm: FormGroup;
 
@@ -97,14 +98,12 @@ export class ReturnsComponent implements OnInit {
     this.customerService.getCustomers().subscribe(c => {
       this.customers = c || [];
       this.customerOptions = [
-        // { label: 'All Customers', value: null },
         { label: 'Other', value: 'OTHER' },
         ...this.customers.map(c => ({ label: c.name, value: c.id }))
       ];
     });
   }
 
-  // ---------------- FILTERS ----------------
   applyFilters(): void {
     let filtered = [...this.returns];
 
@@ -223,6 +222,9 @@ export class ReturnsComponent implements OnInit {
       (Number(packets) || 0) * product.piecesPerPacket +
       (Number(pieces) || 0);
 
+    // Format expiry date as yyyy-MM-dd string
+    const expiryDateString = this.formatDateToString(new Date(expiryDate));
+
     const payload: ReturnItem = {
       id: this.editingReturnId ?? Date.now().toString(),
       ...(customer ? { customer } : { customerName: 'Other' }),
@@ -236,20 +238,65 @@ export class ReturnsComponent implements OnInit {
 
     this.isSavingReturn = true;
 
-    if (this.editingReturnId) {
-      await this.returnsService.updateReturn(payload);
-      this.returns = this.returns.map(r => r.id === payload.id ? payload : r);
-      this.messageService.add({ severity: 'success', summary: 'Updated', detail: 'Return updated successfully.' });
-    } else {
-      await this.returnsService.createReturn(payload);
-      this.returns.push(payload);
-      this.messageService.add({ severity: 'success', summary: 'Created', detail: 'Return created successfully.' });
-    }
+    try {
+      if (this.editingReturnId) {
+        await this.returnsService.updateReturn(payload);
+        this.returns = this.returns.map(r => r.id === payload.id ? payload : r);
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Updated',
+          detail: 'Return updated successfully.'
+        });
+      } else {
+        // Create the return
+        await this.returnsService.createReturn(payload);
+        this.returns.push(payload);
 
-    this.showReturnDialog = false;
-    this.editingReturnId = null;
-    this.applyFilters();
-    this.isSavingReturn = false;
+        // restore stock if reason is unsold meaning the product can still be resold
+        if (reason === 'UNSOLD') {
+          try {
+            await this.stockService.increaseStock(
+              product.id,
+              quantity,
+              expiryDateString,
+              product
+            );
+
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Created',
+              detail: 'Return created and stock restored successfully.'
+            });
+          } catch (stockError: any) {
+            console.error('Error restoring stock:', stockError);
+            this.messageService.add({
+              severity: 'warn',
+              summary: 'Partial Success',
+              detail: 'Return created but failed to restore stock. Please check stock manually.'
+            });
+          }
+        } else {
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Created',
+            detail: `Return created successfully (${reason} - not added to stock).`
+          });
+        }
+      }
+
+      this.showReturnDialog = false;
+      this.editingReturnId = null;
+      this.applyFilters();
+    } catch (error: any) {
+      console.error('Error submitting return:', error);
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: error.message || 'Failed to submit return'
+      });
+    } finally {
+      this.isSavingReturn = false;
+    }
   }
 
   confirmDeleteReturn(item: ReturnItem) {
@@ -267,20 +314,64 @@ export class ReturnsComponent implements OnInit {
         label: 'Delete',
         severity: 'danger',
       },
-
       accept: () => {
-        this.deleteReturn(item)
+        this.deleteReturn(item);
       },
       reject: () => {
-        this.messageService.add({ severity: 'error', summary: 'Rejected', detail: 'You have rejected' });
+        this.messageService.add({
+          severity: 'info',
+          summary: 'Cancelled',
+          detail: 'Deletion cancelled'
+        });
       },
     });
   }
 
   async deleteReturn(item: ReturnItem): Promise<void> {
-    await this.returnsService.deleteReturn(item.id);
-    this.returns = this.returns.filter(r => r.id !== item.id);
-    this.applyFilters();
+    try {
+      await this.returnsService.deleteReturn(item.id);
+      this.returns = this.returns.filter(r => r.id !== item.id);
+
+      // If the return was UNSOLD, we need to remove it from stock again
+      if (item.reason === 'UNSOLD') {
+        try {
+          const expiryDateString = this.formatDateToString(this.toDate(item.expiryDate));
+
+          await this.stockService.reduceStock(
+            item.product.id,
+            item.quantity
+          );
+
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Deleted',
+            detail: 'Return deleted and stock adjusted successfully.'
+          });
+        } catch (stockError: any) {
+          console.error('Error adjusting stock:', stockError);
+          this.messageService.add({
+            severity: 'warn',
+            summary: 'Partial Success',
+            detail: 'Return deleted but failed to adjust stock. Please check stock manually.'
+          });
+        }
+      } else {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Deleted',
+          detail: 'Return deleted successfully.'
+        });
+      }
+
+      this.applyFilters();
+    } catch (error: any) {
+      console.error('Error deleting return:', error);
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: error.message || 'Failed to delete return'
+      });
+    }
   }
 
   formatQuantity(item: ReturnItem): string {
@@ -288,7 +379,7 @@ export class ReturnsComponent implements OnInit {
       item.quantity,
       item.product.piecesPerPacket
     );
-    return pieces > 0 ? `${packets} + ${pieces} pcs` : `${packets}`;
+    return pieces > 0 ? `${packets} ${packets > 1 ? 'pcts' : 'pct'} + ${pieces} ${pieces > 1 ? 'pcs' : 'pc'}` : `${packets} ${packets > 1 ? 'pcts' : 'pct'}`;
   }
 
   calculatePacketsAndPieces(total: number, perPacket: number) {
@@ -297,6 +388,14 @@ export class ReturnsComponent implements OnInit {
       packets: Math.floor(total / perPacket),
       pieces: total % perPacket
     };
+  }
+
+  // Helper to format Date to yyyy-MM-dd string
+  formatDateToString(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   // Calculate days difference between return date and expiry date
@@ -318,17 +417,13 @@ export class ReturnsComponent implements OnInit {
     const days = this.getDaysFromExpiry(item);
     if (days === null) return null;
 
-    // Show badge only if deviation exists
     if (days > 0) {
-      // Returned AFTER expiry date
       return `${days} day${days > 1 ? 's' : ''} past expiry`;
     } else if (days < 0) {
-      // Returned BEFORE expiry date (premature spoilage)
       const daysEarly = Math.abs(days);
       return `${daysEarly} day${daysEarly > 1 ? 's' : ''} before expiry`;
     }
 
-    // days === 0 (returned on expiry date) - no badge needed
     return null;
   }
 
@@ -336,12 +431,10 @@ export class ReturnsComponent implements OnInit {
     const days = this.getDaysFromExpiry(item);
     if (days === null) return 'success';
 
-    // Red if returned before expiry date (quality issue - premature spoilage). TODO Ask if i should add this info in the ui or any cta
     if (days < 0) {
       return 'danger';
     }
 
-    // Green if returned after expiry date (kept too long)
     return 'success';
   }
 }

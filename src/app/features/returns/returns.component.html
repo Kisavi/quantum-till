@@ -23,8 +23,8 @@
 </p-card>
 
 <p-card>
-    <p-table [value]="filteredReturns" [scrollable]="true" scrollHeight="flex" 
-        [loading]="isLoadingReturns" [tableStyle]="{'min-width': '60rem'}">
+    <p-table [value]="filteredReturns" [scrollable]="true" scrollHeight="flex" [loading]="isLoadingReturns"
+        [tableStyle]="{'min-width': '60rem'}">
         <ng-template pTemplate="header">
             <tr>
                 <th>Customer</th>
@@ -57,8 +57,8 @@
                         <span>{{ returnItem.reason | titlecase }}</span>
                         <p-tag *ngIf="getExpiryDeviationMessage(returnItem)"
                             [value]="getExpiryDeviationMessage(returnItem)!"
-                            [severity]="getExpiryDeviationSeverity(returnItem)"
-                            styleClass="text-[10px] px-1 py-0 w-fit" [rounded]="true"> 
+                            [severity]="getExpiryDeviationSeverity(returnItem)" styleClass="text-[10px] px-1 py-0 w-fit"
+                            [rounded]="true">
                         </p-tag>
                     </div>
                 </td>
@@ -91,11 +91,11 @@
     [closable]="true">
     <form [formGroup]="returnForm" (ngSubmit)="submitReturn()">
         <div class="flex flex-col gap-4">
-            <p-select formControlName="customerId" [options]="customerOptions" optionLabel="label" optionValue="value"
-                placeholder="Select Customer" showClear></p-select>
+            <p-select formControlName="customerId" [options]="customerOptions" [filter]="true" optionLabel="label"
+                optionValue="value" placeholder="Select Customer" showClear></p-select>
 
-            <p-select formControlName="productId" [options]="products" optionLabel="name" optionValue="id"
-                placeholder="Select Product" (onChange)="onProductChange($event.value)"></p-select>
+            <p-select formControlName="productId" [options]="products" [filter]="true" optionLabel="name"
+                optionValue="id" placeholder="Select Product" (onChange)="onProductChange($event.value)"></p-select>
 
             <div class="flex gap-2" *ngIf="showPiecesInput">
                 <input type="number" formControlName="packets" placeholder="Packets" class="p-inputtext w-1/2">
@@ -117,7 +117,8 @@
                 <small class="text-red-600">Expiry date is required</small>
                 }
             </div>
-            <p-select formControlName="reason" [options]="returnReasonOptions" placeholder="Return Reason"></p-select>
+            <p-select formControlName="reason" [options]="returnReasonOptions" [filter]="true" appendTo="body"
+                placeholder="Return Reason"></p-select>
             <p-button label="{{ editingReturnId ? 'Edit Return' : 'Submit Return' }}" type="submit"
                 [loading]="isSavingReturn"></p-button>
         </div>

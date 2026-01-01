@@ -1,66 +1,297 @@
-<p-toast></p-toast>
+<div class="card">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-6">
+        <div>
 
-<div class="flex flex-col gap-4">
-  <h3 class="text-lg font-semibold">
-    Allocate Stock for {{ trip.driverName }}
-  </h3>
+        </div>
+    </div>
 
-  <p-table
-    [value]="warehouseStock"
-    stripedRows
-    showGridlines
-    [tableStyle]="{'min-width': '50rem'}">
+    <!-- No Trip Selected -->
+    <p-card *ngIf="!selectedTrip">
+        <div class="flex flex-col items-center gap-4 py-8 text-gray-500">
+            <i class="pi pi-exclamation-triangle text-6xl text-yellow-500"></i>
+            <p class="text-lg font-medium">No trip selected</p>
+            <p class="text-sm">Please select a trip to allocate stock</p>
+        </div>
+    </p-card>
 
-    <ng-template pTemplate="header">
-      <tr>
-        <th>Product</th>
-        <th class="text-right">Available</th>
-        <th class="text-right">Allocate</th>
-      </tr>
-    </ng-template>
+    <!-- Main Content -->
+    <div *ngIf="selectedTrip">
+        <!-- Bulk Allocation Form -->
+        <p-card class="mb-6">
+            <ng-template pTemplate="header">
+                <div class="p-4 border-b border-gray-300 flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-gray-800">
+                        Add Products to Allocation
+                    </h3>
 
-    <ng-template pTemplate="body" let-item>
-      <tr>
-        <td>{{ item.productName }}</td>
+                    <div class="text-right">
+                        <p class="text-sm text-blue-700 font-medium">
+                            Grand Total Value
+                        </p>
+                        <p class="text-3xl font-bold text-green-600">
+                            {{ grandTotalValue | currency:'KES':'symbol':'1.2-2' }}
+                        </p>
+                    </div>
+                </div>
 
-        <td class="text-right font-medium">
-          {{ item.availableQty }}
-        </td>
+            </ng-template>
 
-        <td class="text-right">
-          <input
-            pInputText
-            type="number"
-            min="0"
-            [max]="item.availableQty"
-            [(ngModel)]="item.allocateQty"
-            class="w-24 text-right" />
-        </td>
-      </tr>
-    </ng-template>
+            <div class="space-y-4">
+                <!-- Search/Filter Products -->
+                <div class="flex items-center gap-2">
+                    <i class="pi pi-search text-gray-400"></i>
+                    <input type="text" [(ngModel)]="productSearchTerm" [ngModelOptions]="{standalone: true}"
+                        placeholder="Search products..." class="p-inputtext w-full">
+                </div>
 
-    <ng-template pTemplate="emptymessage">
-      <tr>
-        <td colspan="3" class="text-center py-10 text-gray-500">
-          No stock available
-        </td>
-      </tr>
-    </ng-template>
-  </p-table>
+                <!-- Products Grid -->
+                <div
+                    class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-h-[600px] overflow-y-auto p-2">
+                    <ng-container *ngIf="isLoadingProducts; else productsGrid">
+                        <app-loader-skeleton *ngFor="let _ of [].constructor(4)">
+                        </app-loader-skeleton>
+                    </ng-container>
+                    <ng-template #productsGrid>
+                        <div *ngFor="let product of filteredProducts"
+                            class="border rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden"
+                            [class.bg-blue-50]="getProductQuantity(product.id) > 0"
+                            [class.border-blue-400]="getProductQuantity(product.id) > 0"
+                            [class.ring-2]="getProductQuantity(product.id) > 0"
+                            [class.ring-blue-300]="getProductQuantity(product.id) > 0">
 
-  <div class="flex justify-end gap-3 mt-4">
-    <p-button
-      label="Cancel"
-      severity="secondary"
-      (onClick)="cancel.emit()"
-      class="p-button-text">
-    </p-button>
+                            <!-- Card Header with Stock Info -->
+                            <div class="p-4 bg-gray-50 border-b"
+                                [class.bg-blue-100]="getProductQuantity(product.id) > 0">
+                                <h4 class="font-semibold text-gray-900 text-base mb-1 truncate" [title]="product.name">
+                                    {{ product.name }}
+                                </h4>
+                                <div class="flex justify-between items-center">
+                                    <p class="text-sm font-medium text-blue-600">
+                                        {{ product.unitPrice | currency:'KES':'symbol':'1.2-2' }}
+                                    </p>
+                                    <p class="text-xs font-semibold text-green-600 bg-green-100 px-2 py-1 rounded">
+                                        Stock: {{ formatStockQuantity(product.id) }}
+                                    </p>
+                                </div>
+                            </div>
 
-    <p-button
-      label="Allocate Stock"
-      icon="pi pi-check"
-      [loading]="isSaving"
-      (onClick)="saveAllocation()">
-    </p-button>
-  </div>
+                            <!-- Card Body -->
+                            <div class="p-4 space-y-4">
+                                <!-- Packets/Units Control with Max -->
+                                <div>
+                                    <label class="text-xs font-medium text-gray-600 uppercase mb-2 block">
+                                        {{ product.piecesPerPacket > 1 ? 'Packets' : 'Units' }}
+                                        <span class="text-green-600">(max {{ getMaxPackets(product) }})</span>
+                                    </label>
+                                    <div class="flex items-center gap-2">
+                                        <p-button icon="pi pi-minus" [rounded]="true" [text]="true" size="small"
+                                            severity="secondary" [disabled]="getProductPackets(product.id) <= 0"
+                                            (onClick)="decrementPackets(product.id)">
+                                        </p-button>
+
+                                        <input type="number" [value]="getProductPackets(product.id)"
+                                            (input)="setProductPackets(product.id, $event)" min="0"
+                                            [max]="getMaxPackets(product)" placeholder="0"
+                                            class="p-inputtext text-center flex-1 font-semibold text-lg">
+
+                                        <p-button icon="pi pi-plus" [rounded]="true" [text]="true" size="small"
+                                            severity="success"
+                                            [disabled]="getProductPackets(product.id) >= getMaxPackets(product)"
+                                            (onClick)="incrementPackets(product.id)">
+                                        </p-button>
+                                    </div>
+                                </div>
+
+                                <!-- Pieces Control with Dynamic Max -->
+                                <div *ngIf="product.piecesPerPacket > 1">
+                                    <label class="text-xs font-medium text-gray-600 uppercase mb-2 block">
+                                        Pieces
+                                        <span class="text-green-600">(max {{ getMaxPieces(product,
+                                            getProductPackets(product.id)) }})</span>
+                                    </label>
+                                    <div class="flex items-center gap-2">
+                                        <p-button icon="pi pi-minus" [rounded]="true" [text]="true" size="small"
+                                            severity="secondary" [disabled]="getProductPieces(product.id) <= 0"
+                                            (onClick)="decrementPieces(product.id)">
+                                        </p-button>
+
+                                        <input type="number" [value]="getProductPieces(product.id)"
+                                            (input)="setProductPieces(product.id, $event)" min="0"
+                                            [max]="getMaxPieces(product, getProductPackets(product.id))" placeholder="0"
+                                            class="p-inputtext text-center flex-1 font-semibold text-lg">
+
+                                        <p-button icon="pi pi-plus" [rounded]="true" [text]="true" size="small"
+                                            severity="success"
+                                            [disabled]="getProductPieces(product.id) >= getMaxPieces(product, getProductPackets(product.id))"
+                                            (onClick)="incrementPieces(product.id)">
+                                        </p-button>
+                                    </div>
+                                </div>
+
+                                <!-- Total Summary -->
+                                <div class="pt-3 border-t" *ngIf="getProductQuantity(product.id) > 0">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <span class="text-sm text-gray-600">Total:</span>
+                                        <span class="font-bold text-gray-900">{{ formatProductQuantity(product)
+                                            }}</span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-sm text-gray-600">Value:</span>
+                                        <span class="font-bold text-blue-600">{{ getProductTotalValue(product.id) |
+                                            currency:'KES':'symbol':'1.2-2' }}</span>
+                                    </div>
+                                </div>
+
+                                <!-- Empty State -->
+                                <div class="pt-3 text-center text-gray-400 text-sm"
+                                    *ngIf="getProductQuantity(product.id) === 0">
+                                    <i class="pi pi-shopping-cart"></i>
+                                    <p>Not selected</p>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <!-- Empty State - Out of Stock -->
+                        <div *ngIf="filteredProducts.length === 0"
+                            class="col-span-full text-center py-12 text-gray-500">
+                            <i class="pi pi-inbox text-6xl mb-3 opacity-30"></i>
+                            <p class="text-lg font-medium">No products in stock</p>
+                            <p class="text-sm">All products are currently out of stock or don't match your search</p>
+                        </div>
+                    </ng-template>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="pt-4 border-t border-gray-300 flex items-center justify-between flex-col sm:flex-row gap-3">
+                    <p-button label="Clear All" icon="pi pi-trash" severity="danger" [outlined]="true"
+                        [disabled]="selectedProductsCount === 0" (onClick)="clearAllAllocations()">
+                    </p-button>
+                    <p-button label="Allocate Stock" icon="pi pi-check" severity="success"
+                        [loading]="isSavingAllocation" [disabled]="selectedProductsCount === 0 || isSavingAllocation"
+                        (onClick)="submitBulkAllocation()">
+                    </p-button>
+                </div>
+            </div>
+        </p-card>
+
+        <!-- Allocated Stock Table -->
+        <p-card>
+            <ng-template pTemplate="header">
+                <div class="p-4 border-b">
+                    <h3 class="text-lg font-semibold text-gray-800">Allocated Stock</h3>
+                </div>
+            </ng-template>
+
+            <!-- Loading -->
+            <div *ngIf="isLoadingAllocations" class="flex justify-center items-center py-8">
+                <i class="pi pi-spin pi-spinner text-4xl text-blue-500"></i>
+                <span class="ml-3 text-gray-600">Loading allocations...</span>
+            </div>
+
+            <!-- Allocations Table -->
+            <p-table *ngIf="!isLoadingAllocations" [value]="allocations" [scrollable]="true" stripedRows showGridlines
+                scrollHeight="400px" [tableStyle]="{'min-width': '60rem'}">
+
+                <ng-template pTemplate="header">
+                    <tr>
+                        <th>Product</th>
+                        <th>Unit Price</th>
+                        <th class="text-right">Quantity</th>
+                        <th class="text-right">Total Value</th>
+                        <th>Allocated By</th>
+                        <th>Allocated At</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </ng-template>
+
+                <ng-template pTemplate="body" let-allocation>
+                    <tr class="hover:bg-gray-50">
+                        <td class="font-medium">{{ allocation.product.name }}</td>
+                        <td>{{ allocation.product.unitPrice | currency:'KES':'symbol':'1.2-2' }}</td>
+                        <td class="text-right">
+                            {{ formatAllocationQuantity(allocation.quantity, allocation.product) }}
+                        </td>
+                        <td class="text-right font-semibold text-blue-600">
+                            {{ (allocation.quantity * allocation.product.unitPrice) | currency:'KES':'symbol':'1.2-2' }}
+                        </td>
+                        <td>{{ allocation.allocatedBy }}</td>
+                        <td>{{ toDate(allocation.allocatedAt) | date:'dd/MM/yyyy HH:mm' }}</td>
+                        <td>
+                            <div class="flex justify-center gap-2">
+                                <p-button icon="pi pi-trash" severity="danger" size="small" rounded pTooltip="Delete"
+                                    [loading]="isDeletingAllocation" [disabled]="isDeletingAllocation"
+                                    (onClick)="confirmDeleteAllocation(allocation)">
+                                </p-button>
+                            </div>
+                        </td>
+                    </tr>
+                </ng-template>
+
+                <ng-template pTemplate="emptymessage">
+                    <tr>
+                        <td colspan="7" class="text-center py-20">
+                            <div class="flex flex-col items-center gap-6 text-gray-500">
+                                <i class="pi pi-box text-8xl opacity-30"></i>
+                                <div class="text-center">
+                                    <p class="text-lg font-medium mb-2">No stock allocated yet</p>
+                                    <p class="text-sm">Use the form above to allocate products</p>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                </ng-template>
+
+                <!-- Summary Footer -->
+                <ng-template pTemplate="summary">
+                    <div class="flex flex-col sm:flex-row justify-end gap-4 sm:gap-8 p-4 bg-gray-50 font-semibold">
+                        <div class="text-center sm:text-right">
+                            <p class="text-gray-600 text-sm">Total Value</p>
+                            <p class="text-lg text-blue-600">{{ totalValue | currency:'KES':'symbol':'1.2-2' }}</p>
+                        </div>
+                    </div>
+                </ng-template>
+            </p-table>
+        </p-card>
+    </div>
+
+    <!-- Insufficient Stock Dialog -->
+    <p-dialog header="Insufficient Stock" [(visible)]="showInsufficientStockDialog" [modal]="true"
+        [style]="{width:'550px'}">
+
+        <div class="mb-4">
+            <p class="text-gray-700 mb-3">Cannot allocate the following products:</p>
+
+            <div class="space-y-2">
+                <div *ngFor="let item of insufficientStockProducts" class="p-3 bg-red-50 border border-red-200 rounded">
+                    <div class="flex flex-col gap-2">
+                        <span class="font-semibold text-gray-900">{{ item.name }}</span>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-700">
+                                Requested: <span class="font-medium text-red-600">{{
+                                    formatQuantityDisplay(item.requested, item.product) }}</span>
+                            </span>
+                            <span class="text-gray-700">
+                                Available: <span class="font-medium text-green-600">{{
+                                    formatQuantityDisplay(item.available, item.product) }}</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <ng-template pTemplate="footer">
+            <p-button label="Close" severity="secondary" (onClick)="showInsufficientStockDialog=false">
+            </p-button>
+        </ng-template>
+    </p-dialog>
+
+
+    <!-- Toast Messages -->
+    <p-toast></p-toast>
+
+    <!-- Confirm Dialog -->
+    <p-confirmDialog></p-confirmDialog>
 </div>

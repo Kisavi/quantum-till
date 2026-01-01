@@ -2,16 +2,32 @@
   <!-- Header -->
   <div class="flex justify-between items-center mb-6">
     <div>
-      <h1 class="text-2xl font-bold text-gray-800">Trips</h1>
-      <p class="text-gray-600">Create, start, and complete delivery trips</p>
+      <h1 class="text-2xl font-bold text-gray-800">
+        {{ selectedTrip ? 'Stock Allocation' : 'Trips' }}
+      </h1>
+      <p class="text-gray-600">
+        {{ selectedTrip ? 'Manage stock allocation for this trip' : 'Create, start, and complete delivery trips' }}
+      </p>
     </div>
-    <p-button label="Create New Trip" icon="pi pi-plus" severity="success" (onClick)="showCreateDialog()"
+    <p-button 
+      *ngIf="!selectedTrip"
+      label="Create New Trip" 
+      icon="pi pi-plus" 
+      severity="success" 
+      (onClick)="showCreateDialog()"
       class="p-button-rounded">
+    </p-button>
+    <p-button 
+      *ngIf="selectedTrip"
+      label="Back to Trips" 
+      icon="pi pi-arrow-left" 
+      severity="secondary" 
+      (onClick)="clearSelectedTrip()">
     </p-button>
   </div>
 
-  <!-- Table -->
-  <p-card>
+  <!-- Trips Table (Only show when no trip selected) -->
+  <p-card *ngIf="!selectedTrip">
     <p-table [value]="trips" [scrollable]="true" [loading]="isLoadingTrips" stripedRows showGridlines scrollHeight="flex"
       [tableStyle]="{'min-width': '80rem'}">
       <ng-template pTemplate="header">
@@ -47,14 +63,36 @@
           </td>
           <td>
             <div class="flex space-x-2">
+              <!-- Allocate/View Stock Button for all statuses -->
+              <p-button 
+                icon="pi pi-box" 
+                [severity]="trip.status === 'PENDING' ? 'info' : 'secondary'"
+                size="small" 
+                rounded
+                [pTooltip]="trip.status === 'PENDING' ? 'Allocate Stock' : 'View Stock'" 
+                (onClick)="selectTripForAllocation(trip)">
+              </p-button>
+
               <!-- PENDING → Start -->
-              <p-button *ngIf="trip.status === 'PENDING'" icon="pi pi-play" severity="success" size="small" rounded
-                pTooltip="Start Trip" (onClick)="showStartDialog(trip)">
+              <p-button 
+                *ngIf="trip.status === 'PENDING'" 
+                icon="pi pi-play" 
+                severity="success" 
+                size="small" 
+                rounded
+                pTooltip="Start Trip" 
+                (onClick)="showStartDialog(trip)">
               </p-button>
 
               <!-- ONGOING → End -->
-              <p-button *ngIf="trip.status === 'ONGOING'" icon="pi pi-stop" severity="warn" size="small" rounded
-                pTooltip="End Trip" (onClick)="showEndDialog(trip)">
+              <p-button 
+                *ngIf="trip.status === 'ONGOING'" 
+                icon="pi pi-stop" 
+                severity="warn" 
+                size="small" 
+                rounded
+                pTooltip="End Trip" 
+                (onClick)="showEndDialog(trip)">
               </p-button>
             </div>
           </td>
@@ -75,6 +113,38 @@
       </ng-template>
     </p-table>
   </p-card>
+
+  <!-- Stock Allocation View (Show when trip selected) -->
+  <div *ngIf="selectedTrip">
+    <!-- Trip Info Banner -->
+    <div class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+      <div class="flex items-center justify-between">
+        <div class="grid grid-cols-4 gap-6 flex-1">
+          <div>
+            <p class="text-xs text-blue-600 font-medium uppercase mb-1">Driver</p>
+            <p class="text-base font-semibold text-blue-900">{{ selectedTrip.driverName }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-blue-600 font-medium uppercase mb-1">Route</p>
+            <p class="text-base font-semibold text-blue-900">{{ selectedTrip.route.name }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-blue-600 font-medium uppercase mb-1">Vehicle</p>
+            <p class="text-base font-semibold text-blue-900">{{ selectedTrip.vehicle.regNo }} <span class="text-sm text-gray-600">({{ selectedTrip.vehicle.model }})</span></p>
+          </div>
+          <div>
+            <p class="text-xs text-blue-600 font-medium uppercase mb-1">Trip Status</p>
+            <span [ngClass]="getStatusClass(selectedTrip.status)" class="inline-block px-3 py-1 rounded-full text-xs font-medium">
+              {{ selectedTrip.status }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stock Allocation Component -->
+    <app-trip-stock-allocation [selectedTrip]="selectedTrip"></app-trip-stock-allocation>
+  </div>
 
   <!-- Create Trip Dialog -->
   <p-dialog header="Create New Trip" [(visible)]="visibleCreateDialog" [modal]="true" [style]="{width:'32rem'}">
@@ -142,20 +212,3 @@
 
   <p-toast></p-toast>
 </div>
-
-<!-- allocate stock component -->
-<p-dialog
-  header="Allocate Stock"
-  [(visible)]="visibleAllocateDialog"
-  [modal]="true"
-  [style]="{ width: '60rem' }"
-  [closable]="false">
-
-  <app-trip-stock-allocation
-    *ngIf="selectedTrip"
-    [selectedTrip]="selectedTrip"
-    (saved)="visibleAllocateDialog=false"
-    (cancel)="visibleAllocateDialog=false">
-  </app-trip-stock-allocation>
-
-</p-dialog>
