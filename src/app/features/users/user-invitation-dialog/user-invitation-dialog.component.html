@@ -2,44 +2,84 @@
 
 <p-dialog
   [modal]="true"
-  header="Invite"
+  [header]="tabs.value() === 'Invite' ? 'Invite a user' : 'Invitations'"
   [visible]="visible()"
   (visibleChange)="visibleChange.emit($event)"
+  styleClass="[&_.p-dialog-content]:overflow-visible! lg:min-w-130!"
 >
-  <span class="p-text-secondary block mb-6">
-    Invite someone by choosing their role and entering their email below
-  </span>
+  <p-tabs #tabs value="Invite" class="-mt-4">
+    <p-tablist>
+      <p-tab value="Invite">Invite</p-tab>
+      <p-tab value="Invitations">Invitations</p-tab>
+    </p-tablist>
+  </p-tabs>
 
-  <form [formGroup]="invitationForm">
-    <div class="mb-3">
-      <label for="role" class="text-sm font-medium text-gray-700 block mb-1">Role</label>
-      <p-select
-        id="role"
-        [options]="roles"
-        [filter]="true"
-        placeholder="Select a role"
-        formControlName="role"
-        class="w-full"
-        required
-      />
+  @if (tabs.value() == 'Invite') {
+    <span class="p-text-secondary block mb-6 pt-4">
+      Invite someone by choosing their role and entering their email below
+    </span>
+
+    <form [formGroup]="invitationForm">
+      <div class="mb-3">
+        <label for="role" class="text-sm font-medium text-gray-700 block mb-1">Role</label>
+        <p-select
+          inputId="role"
+          [options]="roles"
+          placeholder="Select a role"
+          formControlName="role"
+          class="w-full"
+          required
+        />
+      </div>
+
+      <div class="mb-8">
+        <label for="email" class="text-sm font-medium text-gray-700 block mb-1">Email</label>
+        <input
+          pInputText
+          id="email"
+          class="w-full"
+          placeholder="Enter email"
+          autocomplete="off"
+          formControlName="email"
+          required
+        />
+      </div>
+
+      <div class="flex justify-end gap-2">
+        <button (click)="closeDialog()" pButton severity="secondary">Cancel</button>
+        <button
+          (click)="invite()"
+          pButton
+          icon="pi pi-check"
+          [disabled]="invitationForm.invalid || saving"
+        >
+          Invite
+        </button>
+      </div>
+    </form>
+  } @else {
+    <div class="h-70 overflow-y-auto pt-4">
+      @let invitations = invitations$ | async;
+
+      @if (!invitations?.length) {
+        <div class="text-center text-gray-500 mt-8">No invitations found.</div>
+      }
+
+      @for (invitation of invitations; track $index) {
+        <div class="border-b border-gray-100 text-sm mb-3 p-2 flex justify-between">
+          <div>
+            <div class="font-semibold">{{ invitation.email }}</div>
+            <div class="text-gray-500 text-xs">{{ invitation.role }}</div>
+          </div>
+          <button
+            (click)="deleteInvitation(invitation.id)"
+            pButton
+            icon="pi pi-trash"
+            rounded
+            severity="secondary"
+          ></button>
+        </div>
+      }
     </div>
-
-    <div class="mb-8">
-      <label for="email" class="text-sm font-medium text-gray-700 block mb-1">Email</label>
-      <input
-        pInputText
-        id="email"
-        class="w-full"
-        placeholder="Enter email"
-        autocomplete="off"
-        formControlName="email"
-        required
-      />
-    </div>
-  </form>
-
-  <div class="flex justify-end gap-2">
-    <p-button label="Cancel" severity="secondary" (click)="closeDialog()" />
-    <p-button label="Invite" (click)="invite()" [disabled]="invitationForm.invalid || saving" />
-  </div>
+  }
 </p-dialog>

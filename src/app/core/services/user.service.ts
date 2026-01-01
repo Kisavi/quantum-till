@@ -4,6 +4,7 @@ import {
   collection,
   collectionData,
   CollectionReference,
+  deleteDoc,
   doc,
   docData,
   Firestore,
@@ -35,10 +36,26 @@ export class UserService {
     'invitations',
   ) as CollectionReference<Invitation>;
 
-  inviteUser(email: string, role: RoleName): Promise<void> {
+  async inviteUser(email: string, role: RoleName): Promise<void> {
+    // Check if an invitation already exists for the email
+    const existingInvitation = await this.getInvitation(email);
+    if (existingInvitation) {
+      throw new Error('An invitation has already been sent to this email address');
+    }
+
     const docRef = doc(this.invitationsCollectionRef);
-    const invitation = { id: docRef.id, email, role } as Invitation;
+    const invitation = { id: docRef.id, email, role, accepted: false } as Invitation;
     return setDoc(docRef, invitation);
+  }
+
+  deleteInvitation(invitationId: string): Promise<void> {
+    const docRef = doc(this.invitationsCollectionRef, invitationId);
+    return deleteDoc(docRef);
+  }
+
+  getInvitations(): Observable<Invitation[]> {
+    const q = query(this.invitationsCollectionRef, where('accepted', '==', false));
+    return collectionData(q, { idField: 'id' });
   }
 
   async getInvitation(email: string | null): Promise<QueryDocumentSnapshot<Invitation> | null> {
@@ -115,12 +132,8 @@ export class UserService {
   }
 
   getUsersExcludingRole(role: RoleName): Observable<User[]> {
-  const q = query(
-    this.usersCollectionRef,
-    where('role', 'not-in', [role])
-  );
+    const q = query(this.usersCollectionRef, where('role', 'not-in', [role]));
 
-  return collectionData(q, { idField: 'uid' }) as Observable<User[]>;
-}
-
+    return collectionData(q, { idField: 'uid' }) as Observable<User[]>;
+  }
 }

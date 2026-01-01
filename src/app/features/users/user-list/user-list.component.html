@@ -6,7 +6,7 @@
     <h1 class="text-2xl font-bold text-gray-800">Users</h1>
     <p class="text-gray-600">Manage your users</p>
   </div>
-  <p-button (click)="openDialog()">Invite User</p-button>
+  <button (click)="openDialog()" pButton icon="pi pi-user-plus">Invite User</button>
 </div>
 
 <p-card>
@@ -37,12 +37,13 @@
             }
           </td>
           <td>
-            <p-button
+            <button
               (click)="toggleActiveStatus(user)"
+              pButton
               icon="pi {{ user.active ? 'pi-lock' : 'pi-key' }}"
               severity="secondary"
               rounded
-            />
+            ></button>
           </td>
         </tr>
       </ng-template>

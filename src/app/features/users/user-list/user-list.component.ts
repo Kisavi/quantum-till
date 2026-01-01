@@ -2,7 +2,7 @@ import { AsyncPipe } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { Badge } from 'primeng/badge';
-import { Button } from 'primeng/button';
+import { ButtonDirective } from 'primeng/button';
 import { Card } from 'primeng/card';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { TableModule } from 'primeng/table';
@@ -16,12 +16,12 @@ import { UserInvitationDialogComponent } from '../user-invitation-dialog/user-in
   imports: [
     TableModule,
     AsyncPipe,
-    Button,
     Card,
     UserInvitationDialogComponent,
     Toast,
     ConfirmDialog,
     Badge,
+    ButtonDirective,
   ],
   templateUrl: './user-list.component.html',
   providers: [MessageService, ConfirmationService],
