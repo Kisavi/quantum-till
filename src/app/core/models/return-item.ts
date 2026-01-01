@@ -13,4 +13,4 @@ export interface ReturnItem {
   createdBy: string;
 }
 
-export type ReturnReason = 'EXPIRED' | 'DAMAGED' | 'WRONG_ITEM' | 'SPOILT' | 'OTHER';
+export type ReturnReason = 'EXPIRED' | 'DAMAGED' | 'WRONG_ITEM' | 'SPOILT' | 'UNSOLD' | 'OTHER';

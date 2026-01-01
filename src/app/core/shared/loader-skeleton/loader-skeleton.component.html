@@ -1,0 +1,17 @@
+ <div class="border rounded-lg shadow-sm overflow-hidden">
+      <!-- Header -->
+      <div class="p-4 bg-gray-50 border-b">
+        <p-skeleton width="70%" height="1.2rem" class="mb-2"></p-skeleton>
+        <div class="flex justify-between items-center">
+          <p-skeleton width="40%" height="1rem"></p-skeleton>
+          <p-skeleton width="25%" height="1.1rem"></p-skeleton>
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div class="p-4 space-y-4">
+        <p-skeleton width="100%" [height]="rowHeight"></p-skeleton>
+        <p-skeleton width="100%" [height]="rowHeight"></p-skeleton>
+        <p-skeleton width="60%" height="1rem"></p-skeleton>
+      </div>
+    </div>

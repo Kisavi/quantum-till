@@ -5,56 +5,118 @@
   header="Record Stock"
   [visible]="visible()"
   (visibleChange)="visibleChange.emit($event)"
+  [style]="{width: '500px'}"
 >
   <form [formGroup]="stockForm">
-    <div class="grid md:grid-cols-2 gap-4 mb-8">
-      <div class="col-span-2">
-        <label for="role" class="text-sm font-medium text-gray-700 block mb-1">Product</label>
+    <div class="grid gap-4 mb-8">
+      <div>
+        <label for="product" class="text-sm font-medium text-gray-700 block mb-1">
+          Product <span class="text-red-600">*</span>
+        </label>
         @let products = products$ | async;
         <p-select
-          id="role"
+          id="product"
           [options]="products!"
           [loading]="!products"
           optionLabel="name"
           [filter]="true"
           placeholder="Select a product"
           formControlName="product"
+          (onChange)="onProductChange($event.value)"
           class="w-full"
-          required
         />
       </div>
 
       <div>
-        <label for="mfg-date" class="text-sm font-medium text-gray-700 block mb-1"
-          >Manufacture Date</label
-        >
+        <label for="mfg-date" class="text-sm font-medium text-gray-700 block mb-1">
+          Manufacture Date <span class="text-red-600">*</span>
+        </label>
         <input
           pInputText
           type="date"
           id="mfg-date"
           class="w-full"
           formControlName="manufactureDate"
-          required
         />
       </div>
 
-      <div>
-        <label for="quantity" class="text-sm font-medium text-gray-700 block mb-1">Quantity</label>
+      <!-- Packets and Pieces -->
+      <div *ngIf="showPiecesInput">
+        <label class="text-sm font-medium text-gray-700 block mb-1">
+          Quantity <span class="text-red-600">*</span>
+        </label>
+        <div class="flex gap-2">
+          <div class="flex-1">
+            <input
+              pInputText
+              type="number"
+              placeholder="Packets"
+              formControlName="packets"
+              min="0"
+              class="w-full"
+            />
+          </div>
+          <div class="flex-1">
+            <input
+              pInputText
+              type="number"
+              placeholder="Pieces"
+              formControlName="pieces"
+              min="0"
+              [max]="getMaxPieces()"
+              class="w-full"
+            />
+          </div>
+        </div>
+        <small class="text-gray-500 mt-1 block">
+          Packets and pieces (max {{ getMaxPieces() }} pieces)
+        </small>
+        <small class="text-red-600 mt-1 block" *ngIf="stockForm.get('pieces')?.hasError('max')">
+          Maximum {{ getMaxPieces() }} pieces allowed
+        </small>
+      </div>
+
+      <!-- Single Quantity Input (for products without pieces) -->
+      <div *ngIf="!showPiecesInput">
+        <label for="quantity" class="text-sm font-medium text-gray-700 block mb-1">
+          Quantity <span class="text-red-600">*</span>
+        </label>
         <input
           pInputText
           type="number"
           id="quantity"
           class="w-full"
-          placeholder="Enter stock quantity"
-          formControlName="quantity"
-          required
+          placeholder="Enter quantity"
+          formControlName="packets"
+          min="0"
         />
+      </div>
+
+      <!-- Preview -->
+      <div *ngIf="selectedProduct && (stockForm.get('packets')?.value || stockForm.get('pieces')?.value)" 
+           class="p-3 bg-blue-50 border border-blue-200 rounded">
+        <p class="text-sm font-medium text-blue-800 mb-1">Summary</p>
+        <div class="flex justify-between items-center">
+          <div>
+            <p class="text-base font-semibold text-gray-900">
+              {{ formatQuantityDisplay(
+                stockForm.get('packets')?.value || 0, 
+                stockForm.get('pieces')?.value || 0
+              ) }}
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   </form>
 
   <div class="flex justify-end gap-2">
     <p-button label="Cancel" severity="secondary" (click)="closeDialog()" />
-    <p-button label="Save" (click)="save()" [disabled]="stockForm.invalid || saving" />
+    <p-button 
+      label="Save" 
+      (click)="save()" 
+      [loading]="saving"
+      [disabled]="stockForm.invalid || saving" 
+    />
   </div>
 </p-dialog>

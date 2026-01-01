@@ -11,15 +11,16 @@ import { ToastModule } from 'primeng/toast';
 import { Tooltip } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
 
-import { Trip, CreateTripDto, EndTripDto } from '../../core/models/trip';
-import { TripService } from '../../core/services/trip.service';
-import { DistributionRoute } from '../../core/models/distribution-route';
-import { Vehicle } from '../../core/models/vehicle';
+import { Trip, CreateTripDto, EndTripDto } from '../../../core/models/trip';
+import { TripService } from '../../../core/services/trip.service';
+import { DistributionRoute } from '../../../core/models/distribution-route';
+import { Vehicle } from '../../../core/models/vehicle';
 
 import { Auth } from '@angular/fire/auth';
-import { UserService } from '../../core/services/user.service';
-import { User } from '../../core/models/user';
-import { TimestampMillisPipe } from '../../core/pipes/timestamp-millis.pipe';
+import { UserService } from '../../../core/services/user.service';
+import { User } from '../../../core/models/user';
+import { TimestampMillisPipe } from '../../../core/pipes/timestamp-millis.pipe';
+import { TripStockAllocationComponent } from './trip-stock-allocation/trip-stock-allocation.component';
 
 @Component({
   selector: 'app-trips',
@@ -35,7 +36,8 @@ import { TimestampMillisPipe } from '../../core/pipes/timestamp-millis.pipe';
     CardModule,
     ToastModule,
     Tooltip,
-    TimestampMillisPipe
+    TimestampMillisPipe,
+    TripStockAllocationComponent
   ],
   providers: [MessageService],
   templateUrl: './trips.component.html',
@@ -58,7 +60,6 @@ export class TripsComponent implements OnInit {
     { id: 'v3', regNo: 'KCB 123A', model: 'Toyota Probox' },
   ];
 
-  /** Loading flags */
   isLoadingTrips = true;
   isCreatingTrip = false;
   isStartingTrip = false;
@@ -68,6 +69,8 @@ export class TripsComponent implements OnInit {
   visibleCreateDialog = false;
   visibleStartDialog = false;
   visibleEndDialog = false;
+
+  visibleAllocateDialog = false;
 
   selectedTrip: Trip | null = null;
 
@@ -116,7 +119,6 @@ export class TripsComponent implements OnInit {
     });
   }
 
-  /** LOAD TRIPS */
   loadTrips(): void {
     this.tripService.getAllTrips().subscribe({
       next: trips => {
@@ -135,7 +137,6 @@ export class TripsComponent implements OnInit {
     });
   }
 
-  /** State helpers */
   get hasOngoingTrip(): boolean {
     return this.trips.some(t => t.status === 'ONGOING');
   }
@@ -144,7 +145,6 @@ export class TripsComponent implements OnInit {
     return this.trips.some(t => t.status === 'PENDING');
   }
 
-  /** CREATE */
   showCreateDialog(): void {
     this.createForm.reset();
     this.visibleCreateDialog = true;
@@ -249,7 +249,6 @@ export class TripsComponent implements OnInit {
     this.isEndingTrip = false;
   }
 
-  /** UI helpers */
   getStatusClass(status: Trip['status']) {
     switch (status) {
       case 'PENDING': return 'px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs';
@@ -285,6 +284,19 @@ getDuration(start: any, end: any): string {
   } else {
     return '1m';
   }
+}
+
+showAllocateDialog(trip: Trip): void {
+  this.selectedTrip = trip;
+  this.visibleAllocateDialog = true;
+}
+
+selectTripForAllocation(trip: Trip): void {
+  this.selectedTrip = trip;
+}
+
+clearSelectedTrip(): void {
+  this.selectedTrip = null;
 }
 
 
