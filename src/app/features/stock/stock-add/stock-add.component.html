@@ -2,9 +2,10 @@
 
 <p-dialog
   [modal]="true"
-  header="Record Stock"
+  header="Add Stock"
   [visible]="visible()"
   (visibleChange)="visibleChange.emit($event)"
+  styleClass="[&_.p-dialog-content]:overflow-visible! mx-2 w-full lg:w-180"
 >
   <form [formGroup]="stockForm">
     <div class="grid md:grid-cols-2 gap-4 mb-8">
@@ -25,9 +26,9 @@
       </div>
 
       <div>
-        <label for="mfg-date" class="text-sm font-medium text-gray-700 block mb-1"
-          >Manufacture Date</label
-        >
+        <label for="mfg-date" class="text-sm font-medium text-gray-700 block mb-1">
+          Manufacture Date
+        </label>
         <input
           pInputText
           type="date"

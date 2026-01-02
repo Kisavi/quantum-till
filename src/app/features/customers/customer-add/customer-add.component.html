@@ -5,11 +5,11 @@
   [header]="title"
   [visible]="visible()"
   (visibleChange)="closeDialog()"
-  styleClass="w-full lg:w-180 mx-2"
+  styleClass="[&_.p-dialog-content]:overflow-visible! mx-2 w-full lg:w-180"
 >
   <form [formGroup]="customerForm">
     <div class="flex flex-col lg:grid lg:grid-cols-2 gap-4 mb-8">
-      <div class="col-span-2">
+      <div>
         <label for="name" class="text-sm font-medium text-gray-700 block mb-1">Name</label>
         <input
           pInputText
@@ -60,10 +60,10 @@
         />
       </div>
 
-      <div>
+      <!-- <div>
         <label for="image" class="text-sm font-medium text-gray-700 block mb-1">Image</label>
-        <input pInputText type="file" id="image" class="w-full" required />
-      </div>
+        <input pInputText type="file" id="image" class="w-full" disabled />
+      </div> -->
     </div>
 
     <div class="flex justify-end gap-2">

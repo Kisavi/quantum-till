@@ -25,11 +25,12 @@ export class StockAddComponent {
   visibleChange = output<boolean>();
 
   saving = false;
+  today = formatDate(new Date(), 'yyyy-MM-dd', 'en');
   products$ = this.productService.getProducts();
 
   stockForm = new FormGroup({
     product: new FormControl(),
-    manufactureDate: new FormControl(),
+    manufactureDate: new FormControl(this.today),
     quantity: new FormControl(),
   });
 
