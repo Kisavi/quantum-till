@@ -14,7 +14,7 @@
       >
         <div>{{ item.stockItem.product.name }} x {{ item.quantity }}</div>
         <div class="font-semibold">
-          {{ item.stockItem.product.unitPrice * item.quantity | currency }}
+          {{ item.stockItem.product.unitPrice * item.quantity | currency: 'KSh ' }}
         </div>
       </div>
     }
@@ -58,7 +58,7 @@
 
     <div class="flex justify-between mb-1">
       <div class="font-medium text-gray-700">Total</div>
-      <div class="font-bold">{{ sale()?.totalPrice | currency }}</div>
+      <div class="font-bold">{{ sale()?.totalPrice | currency: 'KSh ' }}</div>
     </div>
   </div>
 

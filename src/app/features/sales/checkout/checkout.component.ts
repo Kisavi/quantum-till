@@ -3,15 +3,15 @@ import { Component, inject, input, output } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MessageService } from 'primeng/api';
 import { Button } from 'primeng/button';
-import { Checkbox, CheckboxChangeEvent } from 'primeng/checkbox';
+import { CheckboxChangeEvent } from 'primeng/checkbox';
 import { Dialog } from 'primeng/dialog';
-import { Message } from 'primeng/message';
 import { Select } from 'primeng/select';
+import { Toast } from 'primeng/toast';
+import { Customer } from '../../../core/models/customer';
 import { PaymentMethod } from '../../../core/models/sale';
 import { CartService } from '../../../core/services/cart.service';
-import { Toast } from 'primeng/toast';
-import { SaleService } from '../../../core/services/sale.service';
 import { CustomerService } from '../../../core/services/customer.service';
+import { SaleService } from '../../../core/services/sale.service';
 
 @Component({
   selector: 'app-checkout',
@@ -29,7 +29,12 @@ export class CheckoutComponent {
   visibleChange = output<boolean>();
 
   saving = false;
-  paymentMethods: PaymentMethod[] = ['CASH', 'TILL_NUMBER', 'SEND_MONEY', 'MPESA_DEPOSIT'];
+  paymentMethods = [
+    { label: 'Cash', value: 'CASH' },
+    { label: 'Till Number', value: 'TILL_NUMBER' },
+    { label: 'Send Money', value: 'SEND_MONEY' },
+    { label: 'Mpesa Deposit', value: 'MPESA_DEPOSIT' },
+  ];
   customers$ = this.customerService.getCustomers();
   subTotal = this.cartService.subTotal;
 
@@ -50,15 +55,18 @@ export class CheckoutComponent {
     const { customer, paymentMethod, paid } = this.checkoutForm.value;
     const items = this.cartService.items();
     const status = paid ? 'COMPLETED' : 'PENDING';
+    const walkInCustomer = { id: 'walk-in', name: 'Walk-in Customer' } as Customer;
 
     try {
       await this.saleService.checkout(
-        customer,
+        customer || walkInCustomer,
         paymentMethod as PaymentMethod,
         items,
         this.subTotal(),
         status,
       );
+
+      this.cartService.clearCart();
 
       this.messageService.add({
         severity: 'success',

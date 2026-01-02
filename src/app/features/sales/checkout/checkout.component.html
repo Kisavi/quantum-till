@@ -5,7 +5,7 @@
   header="Confirm Payment"
   [visible]="visible()"
   (visibleChange)="visibleChange.emit($event)"
-  styleClass="w-full lg:w-120"
+  styleClass="[&_.p-dialog-content]:overflow-visible! mx-2 w-full lg:w-130"
 >
   <form [formGroup]="checkoutForm">
     <div class="mb-3">
@@ -20,7 +20,6 @@
         placeholder="Select customer"
         formControlName="customer"
         class="w-full"
-        required
       />
     </div>
 
@@ -31,6 +30,8 @@
       <p-select
         id="payment-method"
         [options]="paymentMethods"
+        optionLabel="label"
+        optionValue="value"
         [filter]="true"
         placeholder="Select payment method"
         formControlName="paymentMethod"

@@ -18,7 +18,7 @@
           <th>Date</th>
           <th>Sold By</th>
           <th>Sold To</th>
-          <th>No. of Items</th>
+          <th>No. of Products</th>
           <th>Total Price</th>
           <th>Payment Method</th>
           <th>Status</th>
@@ -32,7 +32,7 @@
           <td>{{ sale.rider.displayName }}</td>
           <td>{{ sale.customer.name }}</td>
           <td>{{ sale.items.length }}</td>
-          <td>{{ sale.totalPrice | currency }}</td>
+          <td>{{ sale.totalPrice | currency: 'KSh ' }}</td>
           <td>{{ sale.paymentMethod }}</td>
           <td>
             @if (sale.status === 'COMPLETED') {

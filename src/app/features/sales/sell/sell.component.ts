@@ -25,13 +25,9 @@ export class SellComponent {
   private cartService = inject(CartService);
 
   stock$ = this.stockService.getProductStock();
-
   cart = this.cartService.items;
-  mobileCartVisible = false;
 
-  addTocart(product: any) {
-    this.cartService.addItem(product);
-  }
+  mobileCartVisible = false;
 
   revealMobileCart() {
     this.mobileCartVisible = true;

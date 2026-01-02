@@ -1,16 +1,41 @@
-@let product = productStockItem()?.product;
-@let stockSize = productStockItem()?.quantity;
+@let product = productStockItem().product;
+@let stockSize = productStockItem().quantity;
 @let isOutOfStock = stockSize === 0;
 
 <div
+  (click)="increaseQuantity()"
   class="shadow rounded-lg p-4 cursor-pointer select-none bg-white hover:bg-gray-100"
   [ngClass]="{ 'cursor-not-allowed text-gray-400 hover:bg-white': isOutOfStock }"
 >
-  <div class="flex items-end">
+  <div class="flex items-center">
     <div class="grow font-medium text-gray-800">
       <div class="mb-1">{{ product?.name }}</div>
       <div class="text-sm top-1.5">{{ product?.unitPrice | currency: 'KSh ' }}</div>
     </div>
+
+    @if (cartItem()) {
+      <div (click)="$event.stopPropagation()" class="flex gap-1 items-center pe-5">
+        <button
+          pButton
+          (click)="decreaseQuantity()"
+          size="small"
+          rounded
+          severity="secondary"
+          icon="pi pi-minus-circle"
+        ></button>
+        <span class="font-semibold">
+          {{ cartItem()?.quantity }}
+        </span>
+        <button
+          pButton
+          (click)="increaseQuantity()"
+          size="small"
+          rounded
+          severity="secondary"
+          icon="pi pi-plus-circle"
+        ></button>
+      </div>
+    }
 
     @if (isOutOfStock) {
       <div class="text-red-600">Out of stock</div>

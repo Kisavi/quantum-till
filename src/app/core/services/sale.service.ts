@@ -1,10 +1,8 @@
 import { inject, Injectable } from '@angular/core';
 import {
-  addDoc,
   collection,
   collectionData,
   CollectionReference,
-  deleteDoc,
   doc,
   Firestore,
   runTransaction,
@@ -14,10 +12,10 @@ import {
 } from '@angular/fire/firestore';
 import { firstValueFrom, Observable } from 'rxjs';
 import { CartItem } from '../models/cart-item';
+import { Customer } from '../models/customer';
 import { PaymentMethod, Sale, SaleStatus } from '../models/sale';
 import { StockService } from './stock.service';
 import { UserService } from './user.service';
-import { Customer } from '../models/customer';
 
 @Injectable({
   providedIn: 'root',
@@ -48,14 +46,18 @@ export class SaleService {
 
     // use a transaction to avoid race conditions and inconsistent stock
     return runTransaction(this.firestore, async (transaction) => {
-      const stockCollRef = this.stockService.stockRecordsCollRef;
+      const stockCollRef = this.stockService.productStockCollRef;
 
       // Reduce stock levels of all items in the cart
-      items.forEach((cartItem) => {
-        const stockItemDocRef = doc(stockCollRef, cartItem.stockItem.id);
-        const quantity = cartItem.stockItem.quantity - cartItem.quantity;
-        transaction.update(stockItemDocRef, { quantity });
-      });
+      for (let cartItem of items) {
+        const productStockDocRef = doc(stockCollRef, cartItem.stockItem.product.id);
+        const productStockDoc = await transaction.get(productStockDocRef);
+
+        if (productStockDoc.exists()) {
+          const quantity = productStockDoc.data().quantity - cartItem.quantity;
+          transaction.update(productStockDocRef, { quantity });
+        }
+      }
 
       // Create and record sale
       const docRef = doc(this.salesCollRef);
@@ -80,7 +82,29 @@ export class SaleService {
   }
 
   deleteSale(id: string): Promise<void> {
-    const docRef = doc(this.salesCollRef, id);
-    return deleteDoc(docRef);
+    return runTransaction(this.firestore, async (transaction) => {
+      const saleDocRef = doc(this.salesCollRef, id);
+
+      const sale = await transaction.get(saleDocRef);
+
+      if (!sale.exists()) {
+        throw new Error('Sale not found');
+      }
+
+      const stockCollRef = this.stockService.productStockCollRef;
+
+      // Restore sold stock from all cart items
+      for (let cartItem of sale.data().items) {
+        const productStockDocRef = doc(stockCollRef, cartItem.stockItem.product.id);
+        const productStockDoc = await transaction.get(productStockDocRef);
+
+        if (productStockDoc.exists()) {
+          const quantity = productStockDoc.data().quantity + cartItem.quantity;
+          transaction.update(productStockDocRef, { quantity });
+        }
+      }
+
+      transaction.delete(saleDocRef);
+    });
   }
 }

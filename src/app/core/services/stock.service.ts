@@ -83,7 +83,7 @@ export class StockService {
         // Decrease existing stock quantity
         const existingStock = productStockDoc.data() as ProductStock;
         const newQuantity = existingStock.quantity - stockRecord.quantity;
-        transaction.update(productStockDocRef, { quantity: newQuantity });
+        transaction.update(productStockDocRef, { quantity: newQuantity > 0 ? newQuantity : 0 });
       }
 
       // Delete stock record

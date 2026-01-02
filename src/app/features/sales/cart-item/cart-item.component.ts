@@ -24,7 +24,7 @@ export class CartItemComponent {
   setQuantity(quantity: number): void {
     if (quantity < 1) return;
     this.cartItem().quantity = quantity;
-    this.cartService.items.update((items) => [...items]); // Trigger signal update
+    this.cartService.items.update((items) => [...items]); // Update signal
   }
 
   remove(item: CartItem): void {

@@ -18,23 +18,46 @@ export class CartService {
     return this.items().find((cartItem) => cartItem.stockItem.product.id === productId);
   }
 
-  addItem(item: ProductStock): void {
-    if (item.quantity <= 0) {
+  addItem(stockItem: ProductStock): void {
+    if (stockItem.quantity <= 0) {
       return;
     }
 
     // Check if item already exists in cart
-    const existingItem = this.getExistingItem(item.product.id);
+    const existingItem = this.getExistingItem(stockItem.product.id);
 
     // If it exists, increase quantity by 1
     if (existingItem) {
+      if (existingItem.quantity >= stockItem.quantity) {
+        // Prevent exceeding stock quantity
+        return;
+      }
       existingItem.quantity += 1;
+      this.items.update((items) => [...items]); // Update signal
       return;
     }
 
     // If it doesn't exist, add new item
-    const cartItem: CartItem = { stockItem: item, quantity: 1 };
+    const cartItem: CartItem = { stockItem: stockItem, quantity: 1 };
     this.items.update((items) => [...items, cartItem]);
+  }
+
+  decreaseQuantity(stockItem: ProductStock): void {
+    const existingItem = this.getExistingItem(stockItem.product.id);
+
+    if (!existingItem) {
+      return;
+    }
+
+    if (existingItem.quantity <= 1) {
+      this.removeItem(existingItem);
+      return;
+    }
+
+
+    existingItem.quantity -= 1;
+    console.log("decreasing...", existingItem.quantity);
+    this.items.update((items) => [...items]); // Update signal
   }
 
   removeItem(item: CartItem): void {

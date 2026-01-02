@@ -16,7 +16,7 @@
       @if (stock.length) {
         <div class="flex flex-col lg:grid lg:grid-cols-2 gap-4">
           @for (stockItem of stock; track stockItem.id) {
-            <app-sale-item (click)="addTocart(stockItem)" [productStockItem]="stockItem" />
+            <app-sale-item [productStockItem]="stockItem" />
           }
         </div>
       } @else {
@@ -35,10 +35,11 @@
 </section>
 
 <p-drawer
-  header="Bottom Drawer"
+  header="Cart"
   [(visible)]="mobileCartVisible"
   position="bottom"
   [fullScreen]="true"
+  styleClass="[&_.p-drawer-content]:p-0!"
 >
   <app-cart />
 </p-drawer>
