@@ -9,14 +9,16 @@ import {
   setDoc,
   updateDoc,
 } from '@angular/fire/firestore';
-import { Observable } from 'rxjs';
+import { firstValueFrom, Observable } from 'rxjs';
 import { Customer } from '../models/customer';
+import { UserService } from './user.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class CustomerService {
   private firestore = inject(Firestore);
+  private userService = inject(UserService);
 
   customersCollRef = collection(this.firestore, 'customers') as CollectionReference<Customer>;
 
@@ -24,9 +26,16 @@ export class CustomerService {
     return collectionData(this.customersCollRef);
   }
 
-  addCustomer(customer: Customer): Promise<void> {
+  async addCustomer(customer: Customer): Promise<void> {
+    const currentUser = await firstValueFrom(this.userService.getCurrentUser());
+
+    if (!currentUser) {
+      throw new Error('Current user not found');
+    }
+
     const docRef = doc(this.customersCollRef);
     customer.id = docRef.id;
+    customer.createdBy = currentUser;
     return setDoc(docRef, customer);
   }
 

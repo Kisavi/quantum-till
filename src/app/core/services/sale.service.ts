@@ -32,7 +32,7 @@ export class SaleService {
   getSales(): Observable<Sale[]> {
     return this.userService.getCurrentUser().pipe(
       switchMap((user) => {
-        let q = query(this.salesCollRef, where('soldBy.uid', '==', user?.uid)); // Get only sales done by the user
+        let q = query(this.salesCollRef, where('soldBy.uid', '==', user?.uid)); // Get only sales done by the current user
         if (user?.role === 'ADMIN' || user?.role === 'MANAGER') {
           q = this.salesCollRef; // Get all sales for admins and managers
         }

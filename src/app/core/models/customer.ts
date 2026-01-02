@@ -1,3 +1,4 @@
+import { User } from 'firebase/auth';
 import { DistributionRoute } from './distribution-route';
 
 export interface Customer {
@@ -7,4 +8,5 @@ export interface Customer {
   location: string;
   image: string;
   route: DistributionRoute;
+  createdBy: User;
 }
