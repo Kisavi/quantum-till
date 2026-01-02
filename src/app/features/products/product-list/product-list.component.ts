@@ -1,18 +1,28 @@
 import { AsyncPipe } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
-import { Button } from 'primeng/button';
+import { ButtonDirective } from 'primeng/button';
 import { Card } from 'primeng/card';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { TableModule } from 'primeng/table';
 import { Toast } from 'primeng/toast';
+import { Product } from '../../../core/models/product';
 import { ProductService } from '../../../core/services/product.service';
 import { ProductAddComponent } from '../product-add/product-add.component';
-import { Product } from '../../../core/models/product';
+import { Tooltip } from 'primeng/tooltip';
 
 @Component({
   selector: 'app-product-list',
-  imports: [ProductAddComponent, Toast, ConfirmDialog, Button, Card, AsyncPipe, TableModule],
+  imports: [
+    ProductAddComponent,
+    Toast,
+    ConfirmDialog,
+    ButtonDirective,
+    Tooltip,
+    Card,
+    AsyncPipe,
+    TableModule,
+  ],
   templateUrl: './product-list.component.html',
   providers: [MessageService, ConfirmationService],
 })
@@ -22,10 +32,22 @@ export class ProductListComponent {
   private confirmationService = inject(ConfirmationService);
 
   products$ = this.productService.getProducts();
+
   dialogVisible = false;
+  product: Product | null = null;
 
   openDialog(): void {
     this.dialogVisible = true;
+  }
+
+  editProduct(product: Product): void {
+    this.product = product;
+    this.openDialog();
+  }
+
+  closeDialog(): void {
+    this.dialogVisible = false;
+    this.product = null;
   }
 
   async deleteProduct(product: Product): Promise<void> {

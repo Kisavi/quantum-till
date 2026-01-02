@@ -5,7 +5,7 @@
   [header]="tabs.value() === 'Invite' ? 'Invite a user' : 'Invitations'"
   [visible]="visible()"
   (visibleChange)="visibleChange.emit($event)"
-  styleClass="[&_.p-dialog-content]:overflow-visible! lg:min-w-130!"
+  styleClass="[&_.p-dialog-content]:overflow-visible! mx-2 w-full lg:w-130"
 >
   <p-tabs #tabs value="Invite" class="-mt-4">
     <p-tablist>

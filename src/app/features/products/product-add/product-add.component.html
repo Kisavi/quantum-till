@@ -2,12 +2,13 @@
 
 <p-dialog
   [modal]="true"
-  header="Add Product"
+  [header]="title"
   [visible]="visible()"
-  (visibleChange)="visibleChange.emit($event)"
+  (visibleChange)="closeDialog()"
+  styleClass="w-full lg:w-180 mx-2"
 >
   <form [formGroup]="productForm">
-    <div class="grid md:grid-cols-2 gap-4 mb-8">
+    <div class="flex flex-col lg:grid lg:grid-cols-2 gap-4 mb-8">
       <div class="col-span-2">
         <label for="name" class="text-sm font-medium text-gray-700 block mb-1">Name</label>
         <input
@@ -21,7 +22,9 @@
       </div>
 
       <div>
-        <label for="unit-price" class="text-sm font-medium text-gray-700 block mb-1">Unit Price</label>
+        <label for="unit-price" class="text-sm font-medium text-gray-700 block mb-1">
+          Unit Price
+        </label>
         <input
           pInputText
           type="number"
@@ -34,7 +37,9 @@
       </div>
 
       <div>
-        <label for="shelf-life" class="text-sm font-medium text-gray-700 block mb-1">Shelf Life (Days)</label>
+        <label for="shelf-life" class="text-sm font-medium text-gray-700 block mb-1">
+          Shelf Life (Days)
+        </label>
         <input
           pInputText
           type="number"
@@ -47,7 +52,9 @@
       </div>
 
       <div>
-        <label for="weight" class="text-sm font-medium text-gray-700 block mb-1">Weight (Grams)</label>
+        <label for="weight" class="text-sm font-medium text-gray-700 block mb-1">
+          Weight (Grams)
+        </label>
         <input
           pInputText
           type="number"
@@ -60,7 +67,9 @@
       </div>
 
       <div>
-        <label for="pieces" class="text-sm font-medium text-gray-700 block mb-1">Pieces per Packet</label>
+        <label for="pieces" class="text-sm font-medium text-gray-700 block mb-1">
+          Pieces per Packet
+        </label>
         <input
           pInputText
           type="number"
@@ -72,10 +81,17 @@
         />
       </div>
     </div>
-  </form>
 
-  <div class="flex justify-end gap-2">
-    <p-button label="Cancel" severity="secondary" (click)="closeDialog()" />
-    <p-button label="Save" (click)="save()" [disabled]="productForm.invalid || saving" />
-  </div>
+    <div class="flex justify-end gap-2">
+      <button (click)="closeDialog()" pButton severity="secondary">Cancel</button>
+      <button
+        (click)="save()"
+        pButton
+        icon="pi pi-check"
+        [disabled]="productForm.invalid || saving"
+      >
+        Save
+      </button>
+    </div>
+  </form>
 </p-dialog>

@@ -6,7 +6,7 @@
     <h1 class="text-2xl font-bold text-gray-800">Products</h1>
     <p class="text-gray-600">Manage your products</p>
   </div>
-  <p-button (click)="openDialog()">Add Product</p-button>
+  <button (click)="openDialog()" pButton icon="pi pi-plus">Add Product</button>
 </div>
 
 <p-card>
@@ -32,13 +32,25 @@
           <td>{{ product.piecesPerPacket }}</td>
           <td>{{ product.weight }}</td>
           <td>{{ product.shelfLife }}</td>
-          <td>
-            <p-button
+          <td class="flex gap-2">
+            <button
+              (click)="editProduct(product)"
+              pButton
+              pTooltip="Edit"
+              tooltipPosition="top"
+              icon="pi pi-pencil"
+              severity="secondary"
+              rounded
+            ></button>
+            <button
               (click)="deleteProduct(product)"
+              pButton
+              pTooltip="Delete"
+              tooltipPosition="top"
               icon="pi pi-trash"
               severity="secondary"
               rounded
-            />
+            ></button>
           </td>
         </tr>
       </ng-template>
@@ -50,4 +62,4 @@
   }
 </p-card>
 
-<app-product-add [(visible)]="dialogVisible" />
+<app-product-add [product]="product" [visible]="dialogVisible" (close)="closeDialog()" />

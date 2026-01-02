@@ -5,9 +5,10 @@
   [header]="title"
   [visible]="visible()"
   (visibleChange)="closeDialog()"
+  styleClass="w-full lg:w-180 mx-2"
 >
   <form [formGroup]="customerForm">
-    <div class="grid md:grid-cols-2 gap-4 mb-8">
+    <div class="flex flex-col lg:grid lg:grid-cols-2 gap-4 mb-8">
       <div class="col-span-2">
         <label for="name" class="text-sm font-medium text-gray-700 block mb-1">Name</label>
         <input
@@ -64,12 +65,17 @@
         <input pInputText type="file" id="image" class="w-full" required />
       </div>
     </div>
-  </form>
 
-  <div class="flex justify-end gap-2">
-    <button (click)="closeDialog()" pButton severity="secondary">Cancel</button>
-    <button (click)="save()" pButton icon="pi pi-check" [disabled]="customerForm.invalid || saving">
-      Save
-    </button>
-  </div>
+    <div class="flex justify-end gap-2">
+      <button (click)="closeDialog()" pButton severity="secondary">Cancel</button>
+      <button
+        (click)="save()"
+        pButton
+        icon="pi pi-check"
+        [disabled]="customerForm.invalid || saving"
+      >
+        Save
+      </button>
+    </div>
+  </form>
 </p-dialog>
