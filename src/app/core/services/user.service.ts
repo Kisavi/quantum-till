@@ -18,7 +18,7 @@ import {
   where,
   writeBatch,
 } from '@angular/fire/firestore';
-import { Observable } from 'rxjs';
+import { from, Observable, switchMap } from 'rxjs';
 import { Invitation } from '../models/invitation';
 import { RoleName } from '../models/role-name';
 import { User } from '../models/user';
@@ -122,8 +122,12 @@ export class UserService {
   }
 
   getCurrentUser(): Observable<User | undefined> {
-    const currentUserDocRef = doc(this.usersCollectionRef, this.auth.currentUser?.uid);
-    return docData(currentUserDocRef);
+    return from(this.auth.authStateReady()).pipe(
+      switchMap(() => {
+        const currentUserDocRef = doc(this.usersCollectionRef, this.auth.currentUser?.uid);
+        return docData(currentUserDocRef);
+      }),
+    );
   }
 
   changeUserActiveStatus(uid: string, active: boolean): Promise<any> {

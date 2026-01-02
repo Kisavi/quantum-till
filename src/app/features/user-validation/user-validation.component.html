@@ -1,11 +1,1 @@
-<div class="h-screen flex flex-col justify-center items-center">
-  @let currentUser = currentUser$ | async;
-
-  @if (currentUser && currentUser.valid) {
-    <p>Redirecting...</p>
-  } @else {
-    <div class="font-bold text-lg">Access Denied</div>
-    <div class="text-sm mb-6">Please contact the administrator for assistance</div>
-    <p-button (onClick)="signOut()" variant="text">Sign Out</p-button>
-  }
-</div>
+<div class="h-screen flex flex-col justify-center items-center">Please wait...</div>

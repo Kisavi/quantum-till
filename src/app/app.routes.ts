@@ -18,6 +18,14 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'access-denied',
+    data: { authGuardPipe: () => redirectUnauthorizedTo(['/auth']) },
+    loadComponent: () =>
+      import('./features/access-denied/access-denied.component').then(
+        (m) => m.AccessDeniedComponent,
+      ),
+  },
+  {
     path: '',
     canActivate: [AuthGuard],
     data: { authGuardPipe: () => redirectUnauthorizedTo(['/auth']) },
@@ -99,12 +107,12 @@ export const routes: Routes = [
       },
       {
         path: '',
-        redirectTo: 'user-validation',
+        redirectTo: '/user-validation',
         pathMatch: 'full',
       },
       {
         path: '**',
-        redirectTo: 'user-validation',
+        redirectTo: '/user-validation',
         pathMatch: 'full',
       },
     ],
