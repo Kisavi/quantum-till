@@ -15,8 +15,8 @@
     @if (stock) {
       @if (stock.length) {
         <div class="flex flex-col lg:grid lg:grid-cols-2 gap-4">
-          @for (item of stock; track item.id) {
-            <app-sale-item (click)="addTocart(item)" [stockItem]="item" />
+          @for (stockItem of stock; track stockItem.id) {
+            <app-sale-item (click)="addTocart(stockItem)" [productStockItem]="stockItem" />
           }
         </div>
       } @else {

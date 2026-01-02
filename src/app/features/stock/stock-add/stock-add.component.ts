@@ -7,9 +7,9 @@ import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
 import { Select } from 'primeng/select';
 import { Toast } from 'primeng/toast';
-import { StockItem } from '../../../core/models/stock-item';
 import { ProductService } from '../../../core/services/product.service';
 import { StockService } from '../../../core/services/stock.service';
+import { StockRecord } from '../../../core/models/stock-record';
 
 @Component({
   selector: 'app-stock-add',
@@ -35,7 +35,7 @@ export class StockAddComponent {
 
   async save(): Promise<void> {
     this.saving = true;
-    const stockItem = this.stockForm.value as StockItem;
+    const stockItem = this.stockForm.value as StockRecord;
     stockItem.expiryDate = formatDate(
       new Date(stockItem.manufactureDate).getTime() + stockItem.product.shelfLife * 86400000,
       'yyyy-MM-dd',
@@ -43,7 +43,7 @@ export class StockAddComponent {
     );
 
     try {
-      await this.stockService.addStockItem(stockItem);
+      await this.stockService.addStockRecord(stockItem);
 
       this.messageService.add({
         severity: 'success',
@@ -55,7 +55,7 @@ export class StockAddComponent {
       this.messageService.add({
         severity: 'error',
         summary: 'Error',
-        detail: 'Recording stock failed',
+        detail: (e as Error).message,
       });
       console.error(e);
     } finally {

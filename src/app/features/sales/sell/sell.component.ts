@@ -24,7 +24,7 @@ export class SellComponent {
   private stockService = inject(StockService);
   private cartService = inject(CartService);
 
-  stock$ = this.stockService.getStockItems();
+  stock$ = this.stockService.getProductStock();
 
   cart = this.cartService.items;
   mobileCartVisible = false;

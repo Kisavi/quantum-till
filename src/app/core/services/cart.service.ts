@@ -1,6 +1,6 @@
 import { computed, Injectable, signal } from '@angular/core';
 import { CartItem } from '../models/cart-item';
-import { StockItem } from '../models/stock-item';
+import { ProductStock } from '../models/product-stock';
 
 @Injectable({
   providedIn: 'root',
@@ -18,7 +18,7 @@ export class CartService {
     return this.items().find((cartItem) => cartItem.stockItem.product.id === productId);
   }
 
-  addItem(item: StockItem): void {
+  addItem(item: ProductStock): void {
     if (item.quantity <= 0) {
       return;
     }

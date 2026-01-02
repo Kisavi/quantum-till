@@ -1,6 +1,6 @@
-import { StockItem } from './stock-item';
+import { ProductStock } from './product-stock';
 
 export interface CartItem {
-  stockItem: StockItem;
+  stockItem: ProductStock;
   quantity: number;
 }

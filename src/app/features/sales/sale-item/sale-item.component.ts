@@ -1,6 +1,6 @@
 import { Component, input } from '@angular/core';
 import { CurrencyPipe, NgClass } from '@angular/common';
-import { StockItem } from '../../../core/models/stock-item';
+import { ProductStock } from '../../../core/models/product-stock';
 
 @Component({
   selector: 'app-sale-item',
@@ -8,5 +8,5 @@ import { StockItem } from '../../../core/models/stock-item';
   templateUrl: './sale-item.component.html',
 })
 export class SaleItemComponent {
-  stockItem = input<StockItem>();
+  productStockItem = input<ProductStock>();
 }

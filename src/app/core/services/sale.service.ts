@@ -48,7 +48,7 @@ export class SaleService {
 
     // use a transaction to avoid race conditions and inconsistent stock
     return runTransaction(this.firestore, async (transaction) => {
-      const stockCollRef = this.stockService.stockCollRef;
+      const stockCollRef = this.stockService.stockRecordsCollRef;
 
       // Reduce stock levels of all items in the cart
       items.forEach((cartItem) => {

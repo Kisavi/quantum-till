@@ -1,27 +1,31 @@
-import { AsyncPipe, DatePipe, DecimalPipe } from '@angular/common';
+import { AsyncPipe, DatePipe, DecimalPipe, JsonPipe } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
-import { Button } from 'primeng/button';
+import { Button, ButtonDirective } from 'primeng/button';
 import { Card } from 'primeng/card';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { TableModule } from 'primeng/table';
+import { TabsModule } from 'primeng/tabs';
 import { Toast } from 'primeng/toast';
-import { StockItem } from '../../../core/models/stock-item';
+import { StockRecord } from '../../../core/models/stock-record';
 import { StockService } from '../../../core/services/stock.service';
 import { StockAddComponent } from '../stock-add/stock-add.component';
+import { Tooltip } from 'primeng/tooltip';
 
 @Component({
   selector: 'app-stock-list',
   imports: [
     Toast,
     ConfirmDialog,
-    Button,
     Card,
     TableModule,
     StockAddComponent,
     AsyncPipe,
     DatePipe,
     DecimalPipe,
+    TabsModule,
+    ButtonDirective,
+    Tooltip,
   ],
   templateUrl: './stock-list.component.html',
   providers: [MessageService, ConfirmationService],
@@ -31,17 +35,18 @@ export class StockListComponent {
   private messageService = inject(MessageService);
   private confirmationService = inject(ConfirmationService);
 
-  stock$ = this.stockService.getStockItems();
+  productStock$ = this.stockService.getProductStock();
+  stockRecords$ = this.stockService.getStockRecords();
   dialogVisible = false;
 
   openDialog(): void {
     this.dialogVisible = true;
   }
 
-  async deleteStockItem(item: StockItem): Promise<void> {
+  async deleteStockRecord(record: StockRecord): Promise<void> {
     this.confirmationService.confirm({
       message: 'Are you sure that you want to proceed?',
-      header: `Remove ${item.product.name} stock`,
+      header: `Remove stock record for ${record.product.name}`,
       closable: true,
       closeOnEscape: true,
       rejectButtonProps: {
@@ -55,17 +60,17 @@ export class StockListComponent {
       },
       accept: async () => {
         try {
-          await this.stockService.deleteStockItem(item.id);
+          await this.stockService.deleteStockRecord(record.id);
           this.messageService.add({
             severity: 'success',
             summary: 'Success',
-            detail: 'Stock removed',
+            detail: 'Stock record deleted',
           });
         } catch (e) {
           this.messageService.add({
             severity: 'error',
             summary: 'Error',
-            detail: 'Failed to remove stock',
+            detail: (e as Error).message,
           });
           console.error(e);
         }

@@ -3,14 +3,16 @@ import {
   collection,
   collectionData,
   CollectionReference,
-  deleteDoc,
   doc,
   Firestore,
-  setDoc,
-  updateDoc,
+  runTransaction,
+  serverTimestamp,
+  Timestamp,
 } from '@angular/fire/firestore';
-import { StockItem } from '../models/stock-item';
 import { Observable } from 'rxjs';
+import { ProductStock } from '../models/product-stock';
+import { StockRecord } from '../models/stock-record';
+import { formatDate } from '@angular/common';
 
 @Injectable({
   providedIn: 'root',
@@ -18,25 +20,74 @@ import { Observable } from 'rxjs';
 export class StockService {
   private firestore = inject(Firestore);
 
-  public stockCollRef = collection(this.firestore, 'stock-items') as CollectionReference<StockItem>;
+  public stockRecordsCollRef = collection(
+    this.firestore,
+    'stock-records',
+  ) as CollectionReference<StockRecord>;
 
-  getStockItems(): Observable<StockItem[]> {
-    return collectionData(this.stockCollRef);
+  public productStockCollRef = collection(
+    this.firestore,
+    'stock',
+  ) as CollectionReference<ProductStock>;
+
+  getProductStock(): Observable<ProductStock[]> {
+    return collectionData(this.productStockCollRef);
   }
 
-  addStockItem(stockItem: StockItem): Promise<void> {
-    const docRef = doc(this.stockCollRef);
-    stockItem.id = docRef.id;
-    return setDoc(docRef, stockItem);
+  getStockRecords(): Observable<StockRecord[]> {
+    return collectionData(this.stockRecordsCollRef);
   }
 
-  updateStockItem(id: string, stockItem: Partial<StockItem>): Promise<void> {
-    const docRef = doc(this.stockCollRef, id);
-    return updateDoc(docRef, stockItem);
+  addStockRecord(stockRecord: StockRecord): Promise<void> {
+    return runTransaction(this.firestore, async (transaction) => {
+      const productStockDocRef = doc(this.productStockCollRef, stockRecord.product.id);
+      const productStockDoc = await transaction.get(productStockDocRef);
+
+      if (productStockDoc.exists()) {
+        // Increase existing stock quantity
+        const existingStock = productStockDoc.data() as ProductStock;
+        const newQuantity = existingStock.quantity + stockRecord.quantity;
+        transaction.update(productStockDocRef, { quantity: newQuantity });
+      } else {
+        // Create new stock entry
+        const newProductStock: ProductStock = {
+          id: stockRecord.product.id,
+          product: stockRecord.product,
+          quantity: stockRecord.quantity,
+        };
+        transaction.set(productStockDocRef, newProductStock);
+      }
+
+      // Add stock record
+      const stockRecordDocRef = doc(this.stockRecordsCollRef);
+      stockRecord.id = stockRecordDocRef.id;
+      stockRecord.adjustedOn = serverTimestamp() as Timestamp;
+      transaction.set(stockRecordDocRef, stockRecord);
+    });
   }
 
-  deleteStockItem(id: string): Promise<void> {
-    const docRef = doc(this.stockCollRef, id);
-    return deleteDoc(docRef);
+  deleteStockRecord(id: string): Promise<void> {
+    return runTransaction(this.firestore, async (transaction) => {
+      const stockRecordDocRef = doc(this.stockRecordsCollRef, id);
+      const stockRecordDoc = await transaction.get(stockRecordDocRef);
+
+      if (!stockRecordDoc.exists()) {
+        throw new Error('Stock record does not exist');
+      }
+
+      const stockRecord = stockRecordDoc.data() as StockRecord;
+      const productStockDocRef = doc(this.productStockCollRef, stockRecord.product.id);
+      const productStockDoc = await transaction.get(productStockDocRef);
+
+      if (productStockDoc.exists()) {
+        // Decrease existing stock quantity
+        const existingStock = productStockDoc.data() as ProductStock;
+        const newQuantity = existingStock.quantity - stockRecord.quantity;
+        transaction.update(productStockDocRef, { quantity: newQuantity });
+      }
+
+      // Delete stock record
+      transaction.delete(stockRecordDocRef);
+    });
   }
 }

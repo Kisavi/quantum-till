@@ -6,45 +6,82 @@
     <h1 class="text-2xl font-bold text-gray-800">Products Stock</h1>
     <p class="text-gray-600">Manage your product's stock</p>
   </div>
-  <p-button (click)="openDialog()">Record Stock</p-button>
+  <button (click)="openDialog()" pButton icon="pi pi-plus">Add Stock</button>
 </div>
 
 <p-card>
-  @let stock = stock$ | async;
+  <p-tabs #tabs value="Stock" class="-mt-4 mb-5">
+    <p-tablist>
+      <p-tab value="Stock">Stock</p-tab>
+      <p-tab value="History">Stock Record History</p-tab>
+    </p-tablist>
+  </p-tabs>
 
-  @if (stock) {
-    <p-table [value]="stock">
-      <ng-template #header>
-        <tr>
-          <th>Product Name</th>
-          <th>Manufacture on</th>
-          <th>Expires on</th>
-          <th>In Stock</th>
-          <th style="width: 5rem"></th>
-        </tr>
-      </ng-template>
+  @let productStock = productStock$ | async;
+  @let stockRecords = stockRecords$ | async;
 
-      <ng-template #body let-stockItem>
-        <tr>
-          <td>{{ stockItem.product.name }}</td>
-          <td>{{ stockItem.manufactureDate | date }}</td>
-          <td>{{ stockItem.expiryDate | date }}</td>
-          <td>{{ stockItem.quantity | number }}</td>
-          <td>
-            <p-button
-              (click)="deleteStockItem(stockItem)"
-              icon="pi pi-trash"
-              severity="secondary"
-              rounded
-            />
-          </td>
-        </tr>
-      </ng-template>
+  @if (tabs.value() === 'Stock') {
+    @if (productStock) {
+      <p-table [value]="productStock">
+        <ng-template #header>
+          <tr>
+            <th>Product Name</th>
+            <th>In Stock</th>
+          </tr>
+        </ng-template>
 
-      <ng-template pTemplate="emptymessage">-- No stock recorded --</ng-template>
-    </p-table>
+        <ng-template #body let-stock>
+          <tr>
+            <td>{{ stock.product.name }}</td>
+            <td>{{ stock.quantity | number }}</td>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">-- No stock --</ng-template>
+      </p-table>
+    } @else {
+      <div class="text-center">loading...</div>
+    }
   } @else {
-    <div class="text-center">loading...</div>
+    @if (stockRecords) {
+      <p-table [value]="stockRecords">
+        <ng-template #header>
+          <tr>
+            <th>Added On</th>
+            <th>Product Name</th>
+            <th>Manufacture on</th>
+            <th>Expires on</th>
+            <th>Quantity</th>
+            <th style="width: 5rem"></th>
+          </tr>
+        </ng-template>
+
+        <ng-template #body let-stockRecord>
+          <tr>
+            <td>{{ stockRecord.adjustedOn.seconds * 1000 | date }}</td>
+            <td>{{ stockRecord.product.name }}</td>
+            <td>{{ stockRecord.manufactureDate | date }}</td>
+            <td>{{ stockRecord.expiryDate | date }}</td>
+            <td>{{ stockRecord.quantity | number }}</td>
+            <td>
+              <button
+                (click)="deleteStockRecord(stockRecord)"
+                pButton
+                pTooltip="Delete"
+                tooltipPosition="top"
+                icon="pi pi-trash"
+                severity="secondary"
+                rounded
+              ></button>
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">-- No stock recorded --</ng-template>
+      </p-table>
+    } @else {
+      <div class="text-center">loading...</div>
+    }
   }
 </p-card>
 
