@@ -29,7 +29,7 @@
       <ng-template #body let-sale>
         <tr (click)="viewSale(sale)" class="cursor-pointer">
           <td>{{ sale.date.seconds * 1000 | date }}</td>
-          <td>{{ sale.rider.displayName }}</td>
+          <td>{{ sale.soldBy.displayName }}</td>
           <td>{{ sale.customer.name }}</td>
           <td>{{ sale.items.length }}</td>
           <td>{{ sale.totalPrice | currency: 'KSh ' }}</td>

@@ -5,7 +5,7 @@ import { User } from './user';
 
 export interface Sale {
   id: string;
-  rider: User;
+  soldBy: User;
   customer: Customer;
   items: CartItem[];
   totalPrice: number;

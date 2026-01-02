@@ -5,12 +5,14 @@ import {
   CollectionReference,
   doc,
   Firestore,
+  query,
   runTransaction,
   serverTimestamp,
   Timestamp,
   updateDoc,
+  where,
 } from '@angular/fire/firestore';
-import { firstValueFrom, Observable } from 'rxjs';
+import { firstValueFrom, Observable, switchMap } from 'rxjs';
 import { CartItem } from '../models/cart-item';
 import { Customer } from '../models/customer';
 import { PaymentMethod, Sale, SaleStatus } from '../models/sale';
@@ -28,7 +30,15 @@ export class SaleService {
   salesCollRef = collection(this.firestore, 'sales') as CollectionReference<Sale>;
 
   getSales(): Observable<Sale[]> {
-    return collectionData(this.salesCollRef);
+    return this.userService.getCurrentUser().pipe(
+      switchMap((user) => {
+        let q = query(this.salesCollRef, where('soldBy.uid', '==', user?.uid)); // Get only sales done by the user
+        if (user?.role === 'ADMIN' || user?.role === 'MANAGER') {
+          q = this.salesCollRef; // Get all sales for admins and managers
+        }
+        return collectionData(q);
+      }),
+    );
   }
 
   async checkout(
@@ -63,7 +73,7 @@ export class SaleService {
       const docRef = doc(this.salesCollRef);
       const sale: Sale = {
         id: docRef.id,
-        rider: currentUser,
+        soldBy: currentUser,
         customer,
         date: serverTimestamp() as Timestamp,
         paymentMethod,
