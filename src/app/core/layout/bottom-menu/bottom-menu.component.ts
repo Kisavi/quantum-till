@@ -12,5 +12,6 @@ export class BottomMenuComponent {
     { label: 'Sales', icon: 'pi pi-shopping-cart', routerLink: '/sales' },
     { label: 'Returns', icon: 'pi pi-undo', routerLink: '/returns' },
     { label: 'Customers', icon: 'pi pi-user-plus', routerLink: '/customers' },
+    { label: 'Expenses', icon: 'pi pi-wallet', routerLink: '/expenses' },
   ];
 }
