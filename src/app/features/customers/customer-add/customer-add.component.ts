@@ -1,8 +1,8 @@
 import { AsyncPipe } from '@angular/common';
-import { Component, inject, input, output } from '@angular/core';
+import { Component, effect, inject, input, output } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MessageService } from 'primeng/api';
-import { Button } from 'primeng/button';
+import { ButtonDirective } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
 import { Select } from 'primeng/select';
@@ -13,7 +13,7 @@ import { DistributionRouteService } from '../../../core/services/distribution-ro
 
 @Component({
   selector: 'app-customer-add',
-  imports: [Toast, Dialog, Select, AsyncPipe, InputText, Button, ReactiveFormsModule],
+  imports: [Toast, Dialog, Select, AsyncPipe, InputText, ButtonDirective, ReactiveFormsModule],
   templateUrl: './customer-add.component.html',
   providers: [MessageService],
 })
@@ -23,8 +23,10 @@ export class CustomerAddComponent {
   private distributionRouteService = inject(DistributionRouteService);
 
   visible = input(false);
-  visibleChange = output<boolean>();
+  customer = input<Customer | null>(null);
+  close = output();
 
+  title!: string;
   saving = false;
   routes$ = this.distributionRouteService.getDistributionRoutes();
 
@@ -36,24 +38,42 @@ export class CustomerAddComponent {
     image: new FormControl(),
   });
 
+  constructor() {
+    effect(() => {
+      const customer = this.customer();
+      this.title = customer?.id ? 'Edit Customer' : 'Add Customer';
+
+      if (customer) {
+        this.customerForm.patchValue(customer);
+      }
+    });
+  }
+
   async save(): Promise<void> {
     this.saving = true;
+    let message;
     const customer = this.customerForm.value as Customer;
 
     try {
-      await this.customerService.addCustomer(customer);
+      if (this.customer()) {
+        await this.customerService.updateCustomer(this.customer()!.id, customer);
+        message = 'Customer updated';
+      } else {
+        await this.customerService.addCustomer(customer);
+        message = 'Customer added';
+      }
 
       this.messageService.add({
         severity: 'success',
         summary: 'Success',
-        detail: 'Customer added',
+        detail: message,
       });
       this.closeDialog();
     } catch (e) {
       this.messageService.add({
         severity: 'error',
         summary: 'Error',
-        detail: 'Adding customer failed',
+        detail: (e as Error).message,
       });
       console.error(e);
     } finally {
@@ -63,6 +83,6 @@ export class CustomerAddComponent {
 
   closeDialog(): void {
     this.customerForm.reset();
-    this.visibleChange.emit(false);
+    this.close.emit();
   }
 }
