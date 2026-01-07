@@ -1,23 +1,68 @@
+
 @let product = stockItem()?.product;
 @let stockSize = stockItem()?.quantity;
 @let isOutOfStock = stockSize === 0;
+@let cartQty = cartQuantity();
+@let availableQty = availableStock();
 
 <div
-  class="shadow rounded-lg p-4 cursor-pointer select-none bg-white hover:bg-gray-100"
-  [ngClass]="{ 'cursor-not-allowed text-gray-400 hover:bg-white': isOutOfStock }"
+  class="shadow rounded-lg p-4 bg-white transition-all"
+  [ngClass]="{ 
+    'border-2 border-blue-500 bg-blue-50': cartQty > 0,
+    'opacity-50': isOutOfStock
+  }"
 >
-  <div class="flex items-end">
-    <div class="grow font-medium text-gray-800">
-      <div class="mb-1">{{ product?.name }}</div>
-      <div class="text-sm top-1.5">{{ product?.unitPrice | currency: 'KSh ' }}</div>
-    </div>
-
-    @if (isOutOfStock) {
-      <div class="text-red-600">Out of stock</div>
-    } @else {
-      <div class="text-gray-700" [ngClass]="{ 'text-orange-400': stockSize && stockSize < 5 }">
-        {{ stockSize }} in stock
-      </div>
-    }
+  <!-- Product Info -->
+  <div class="mb-3">
+    <div class="font-semibold text-gray-800 mb-1">{{ product?.name }}</div>
+    <div class="text-sm text-gray-600">{{ product?.unitPrice | currency: 'KSh ' }}</div>
   </div>
+
+  <!-- Stock Info -->
+  <div class="text-xs text-right mb-3">
+    @if (isOutOfStock) {
+      <span class="text-red-600 font-medium">Out of stock</span>
+    } @else if (cartQty > 0) {
+      <span class="text-blue-600 font-medium">{{ formatQuantity(availableQty, product) }} left</span>
+    } @else {
+      <span class="text-gray-600" [ngClass]="{ 'text-orange-500': stockSize && stockSize < 5 }">
+        {{ formatQuantity(stockSize, product) }} available
+      </span>
+    }
+  </div> 
+
+  <!-- Plus/Minus Controls -->
+  @if (!isOutOfStock) {
+    <div class="flex items-center justify-between gap-2">
+      <p-button 
+        icon="pi pi-minus" 
+        [rounded]="true"
+        size="small"
+        severity="danger"
+        [disabled]="cartQty === 0"
+        (onClick)="removeFromCart()"
+      />
+
+      <div class="text-center min-w-16">
+        @if (cartQty > 0) {
+          <div class="text-xl font-bold text-blue-600">{{ formatQuantity(cartQty, product) }}</div>
+        } @else {
+          <div class="text-2xl font-bold text-gray-300">0</div>
+        }
+      </div>
+
+      <p-button 
+        icon="pi pi-plus" 
+        [rounded]="true"
+        size="small"
+        severity="success"
+        [disabled]="!canAddMore()"
+        (onClick)="addToCart()"
+      />
+    </div>
+  } @else {
+    <div class="text-center py-2 text-gray-400 text-sm font-medium">
+      Not available
+    </div>
+  }
 </div>

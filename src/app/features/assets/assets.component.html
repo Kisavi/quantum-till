@@ -8,7 +8,7 @@
     <div class="flex gap-4 items-center">
       <div class="text-right">
         <p class="text-sm text-gray-600">Total Value</p>
-        <p class="text-2xl font-bold text-blue-600">KES {{ totalValue | number }}</p>
+        <p class="text-2xl font-bold text-blue-600">{{ totalValue | currency:'KES':'symbol':'1.0-0' }}</p>
       </div>
       <p-button 
         label="Add Asset" 
@@ -22,7 +22,13 @@
 
   <!-- Table -->
   <p-card>
-    <p-table [value]="assets" stripedRows showGridlines [scrollable]="true" scrollHeight="flex">
+    <p-table 
+      [value]="assets" 
+      stripedRows 
+      showGridlines 
+      [scrollable]="true" 
+      scrollHeight="flex"
+      [loading]="isLoadingAssets">
       <ng-template pTemplate="header">
         <tr>
           <th>Photo</th>
@@ -40,7 +46,7 @@
         <tr class="hover:bg-gray-50">
           <td>
             <img 
-              [src]="asset.photoUrl"
+              [src]="asset.photoUrl || 'https://via.placeholder.com/64'"
               class="w-16 h-16 object-cover rounded cursor-pointer border"
               (click)="viewImage(asset.photoUrl)" />
           </td>
@@ -48,7 +54,7 @@
           <td>{{ asset.category }}</td>
           <td>{{ asset.brand || '-' }} {{ asset.model ? '/' + asset.model : '' }}</td>
           <td>{{ asset.purchaseDate | date:'dd/MM/yyyy' }}</td>
-          <td class="text-right font-semibold">{{ asset.purchaseCost | number }}</td>
+          <td class="text-right font-semibold">{{ asset.purchaseCost | currency:'KES':'symbol':'1.0-0' }}</td>
           <td>
             <span [ngClass]="{
               'bg-green-100 text-green-800': asset.status === 'Operational',
@@ -61,8 +67,22 @@
           </td>
           <td>
             <div class="flex gap-2">
-              <p-button icon="pi pi-pencil" severity="info" size="small" rounded (onClick)="showDialog(asset)"></p-button>
-              <p-button icon="pi pi-trash" severity="danger" size="small" rounded (onClick)="deleteAsset(asset)"></p-button>
+              <p-button 
+                icon="pi pi-pencil" 
+                severity="info" 
+                size="small" 
+                rounded 
+                pTooltip="Edit"
+                (onClick)="showDialog(asset)">
+              </p-button>
+              <p-button 
+                icon="pi pi-trash" 
+                severity="danger" 
+                size="small" 
+                rounded 
+                pTooltip="Delete"
+                (onClick)="confirmDeleteAsset(asset)">
+              </p-button>
             </div>
           </td>
         </tr>
@@ -70,8 +90,14 @@
 
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="8" class="text-center py-8 text-gray-500">
-            No assets recorded yet. Click "Add Asset" to begin!
+          <td colspan="8" class="text-center py-20">
+            <div class="flex flex-col items-center gap-6 text-gray-500">
+              <i class="pi pi-box text-8xl opacity-30"></i>
+              <div class="text-center">
+                <p class="text-lg font-medium mb-2">No assets recorded yet</p>
+                <p class="text-sm">Click "Add Asset" to begin!</p>
+              </div>
+            </div>
           </td>
         </tr>
       </ng-template>
@@ -83,8 +109,9 @@
     [(visible)]="visibleDialog" 
     [header]="isEditing ? 'Edit Asset' : 'Add New Asset'" 
     [modal]="true" 
-    [style]="{ width: '40rem' }"
-    styleClass="overflow-auto">
+    [style]="{ width: '45rem' }"
+    [draggable]="false"
+    [resizable]="false">
 
     <form [formGroup]="assetForm" (ngSubmit)="saveAsset()" class="space-y-6">
 
@@ -92,7 +119,16 @@
         <!-- Name -->
         <div class="flex flex-col gap-2">
           <label class="font-medium">Name <span class="text-red-600">*</span></label>
-          <input pInputText formControlName="name" placeholder="e.g. Gas Oven #2" class="w-full" />
+          <input 
+            pInputText 
+            formControlName="name" 
+            placeholder="e.g. Gas Oven #2" 
+            class="w-full" />
+          <small 
+            *ngIf="assetForm.get('name')?.invalid && assetForm.get('name')?.touched" 
+            class="text-red-500">
+            Name is required
+          </small>
         </div>
 
         <!-- Category -->
@@ -106,18 +142,41 @@
             placeholder="Select category"
             class="w-full">
           </p-select>
+          <small 
+            *ngIf="assetForm.get('category')?.invalid && assetForm.get('category')?.touched" 
+            class="text-red-500">
+            Category is required
+          </small>
         </div>
 
         <!-- Brand -->
         <div class="flex flex-col gap-2">
           <label class="font-medium">Brand</label>
-          <input pInputText formControlName="brand" placeholder="e.g. Sinmag" class="w-full" />
+          <input 
+            pInputText 
+            formControlName="brand" 
+            placeholder="e.g. Sinmag" 
+            class="w-full" />
         </div>
 
         <!-- Model -->
         <div class="flex flex-col gap-2">
           <label class="font-medium">Model</label>
-          <input pInputText formControlName="model" placeholder="e.g. 60kg Spiral" class="w-full" />
+          <input 
+            pInputText 
+            formControlName="model" 
+            placeholder="e.g. 60kg Spiral" 
+            class="w-full" />
+        </div>
+
+        <!-- Serial Number -->
+        <div class="flex flex-col gap-2">
+          <label class="font-medium">Serial Number</label>
+          <input 
+            pInputText 
+            formControlName="serialNumber" 
+            placeholder="e.g. SN123456" 
+            class="w-full" />
         </div>
 
         <!-- Purchase Date -->
@@ -127,8 +186,14 @@
             formControlName="purchaseDate" 
             [showIcon]="true" 
             dateFormat="dd/mm/yy"
+            placeholder="Select date"
             class="w-full">
           </p-datepicker>
+          <small 
+            *ngIf="assetForm.get('purchaseDate')?.invalid && assetForm.get('purchaseDate')?.touched" 
+            class="text-red-500">
+            Purchase date is required
+          </small>
         </div>
 
         <!-- Cost -->
@@ -139,8 +204,14 @@
             mode="decimal" 
             [min]="1"
             [showButtons]="true"
+            placeholder="0"
             class="w-full">
           </p-inputNumber>
+          <small 
+            *ngIf="assetForm.get('purchaseCost')?.invalid && assetForm.get('purchaseCost')?.touched" 
+            class="text-red-500">
+            Cost is required and must be greater than 0
+          </small>
         </div>
 
         <!-- Status -->
@@ -158,26 +229,26 @@
             class="w-full">
           </p-select>
         </div>
-
-        <!-- Photo Upload -->
-        <div class="flex flex-col gap-2">
-          <label class="font-medium">Photo</label>
-          <input 
-            type="file" 
-            accept="image/*" 
-            (change)="onFileChange($event)" 
-            class="w-full p-2 border rounded" />
-          
-          <img 
-            *ngIf="assetForm.value.photoBase64 || editingAsset?.photoUrl"
-            [src]="getPreviewUrl()" 
-            class="w-full max-w-xs h-48 object-cover rounded mt-3 border" 
-            alt="Preview" />
-        </div>
       </div>
 
-      <!-- Notes - Always Visible -->
-      <div class="flex flex-col gap-2 col-span-1 md:col-span-2">
+      <!-- Photo Upload -->
+      <div class="flex flex-col gap-2">
+        <label class="font-medium">Photo</label>
+        <input 
+          type="file" 
+          accept="image/*" 
+          (change)="onFileChange($event)" 
+          class="w-full p-2 border rounded" />
+        
+        <img 
+          *ngIf="getPreviewUrl()"
+          [src]="getPreviewUrl()" 
+          class="w-full max-w-xs h-48 object-cover rounded mt-3 border" 
+          alt="Preview" />
+      </div>
+
+      <!-- Notes -->
+      <div class="flex flex-col gap-2">
         <label class="font-medium">Notes</label>
         <textarea 
           pInputTextarea 
@@ -203,18 +274,26 @@
           icon="pi pi-check" 
           severity="success" 
           (onClick)="saveAsset()" 
-          [disabled]="assetForm.invalid">
+          [loading]="isSavingAsset"
+          [disabled]="assetForm.invalid || isSavingAsset">
         </p-button>
       </div>
     </ng-template>
   </p-dialog>
 
   <!-- Image Viewer Modal -->
-  <p-dialog [(visible)]="visibleImageModal" [modal]="true" header="Asset Photo" [style]="{ width: '90vw', maxWidth: '800px' }">
+  <p-dialog 
+    [(visible)]="visibleImageModal" 
+    [modal]="true" 
+    header="Asset Photo" 
+    [style]="{ width: '90vw', maxWidth: '800px' }">
     <div class="flex justify-center">
-      <img [src]="selectedImageUrl" class="max-w-full max-h-[70vh] object-contain rounded" />
+      <img 
+        [src]="selectedImageUrl" 
+        class="max-w-full max-h-[70vh] object-contain rounded" />
     </div>
   </p-dialog>
 
   <p-toast></p-toast>
+  <p-confirmdialog></p-confirmdialog>
 </div>

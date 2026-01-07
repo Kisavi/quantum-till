@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
@@ -10,7 +10,7 @@ import { SelectModule } from 'primeng/select';
 import { CardModule } from 'primeng/card';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmationService, MessageService } from 'primeng/api';
-import { finalize, Subscription } from 'rxjs';
+import { catchError, EMPTY, finalize, Observable, of, Subscription, switchMap, tap } from 'rxjs';
 import { Expense, ExpenseReason } from '../../core/models/expense';
 import { ExpenseService } from '../../core/services/expense.service';
 import { FloatLabel } from 'primeng/floatlabel';
@@ -18,6 +18,10 @@ import { AuthService } from '../../core/services/auth.service';
 import { compressImageFile } from '../../core/helpers/image-helpers';
 import { TimestampMillisPipe } from '../../core/pipes/timestamp-millis.pipe';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ActivatedRoute } from '@angular/router';
+import { getExpenseType } from '../../core/helpers/expense-type';
+import { UserService } from '../../core/services/user.service';
+import { Auth } from '@angular/fire/auth';
 
 
 @Component({
@@ -38,12 +42,21 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
     TimestampMillisPipe,
     ConfirmDialogModule
   ],
-  providers: [MessageService,ConfirmationService],
+  providers: [MessageService, ConfirmationService],
   templateUrl: './expense.component.html'
 })
 export class ExpenseComponent implements OnInit, OnDestroy {
-  expenses: Expense[] = [];
+  expenses$!: Observable<Expense[]>;
+  expensesCache: Expense[] = [];
   reasons: ExpenseReason[] = [];
+  expenseTypes = [
+    { label: 'Company Expense', value: 'COMPANY' },
+    { label: 'Personal Expense', value: 'PERSONAL' }
+  ];
+  paymentMethods = [
+    { label: 'CASH', value: 'CASH' },
+    { label: 'M-PESA', value: 'MPESA' }
+  ];
 
   visibleDialog = false;
   visibleImage = false;
@@ -67,9 +80,13 @@ export class ExpenseComponent implements OnInit, OnDestroy {
   totalPending = 0;
   totalApproved = 0;
   editingExpenseId: string | null = null;
-
+  tripId: string | null = null;
 
   private expensesSubscription?: Subscription;
+  private userService = inject(UserService);
+  private route = inject(ActivatedRoute);
+  private auth = inject(Auth);
+  isAdmin$ = this.userService.isAdmin();
 
   constructor(
     private fb: FormBuilder,
@@ -80,9 +97,10 @@ export class ExpenseComponent implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit(): void {
+    this.tripId = this.route.snapshot.queryParams['tripId'];
     this.reasons = this.expenseService.reasons;
     this.initForms();
-    this.getExpenses();
+    this.loadExpenses();
   }
 
   ngOnDestroy(): void {
@@ -93,6 +111,8 @@ export class ExpenseComponent implements OnInit, OnDestroy {
   private initForms(): void {
     this.expenseForm = this.fb.group({
       reason: ['', Validators.required],
+      expenseType: [''],
+      paymentMethod: ['', Validators.required],
       amount: [null, [Validators.required, Validators.min(1)]],
       notes: [''],
       attachmentBase64: ['']
@@ -104,48 +124,78 @@ export class ExpenseComponent implements OnInit, OnDestroy {
 
     this.expenseForm.get('reason')?.valueChanges.subscribe(reason => {
       const notesCtrl = this.expenseForm.get('notes');
+      const expenseTypeCtrl = this.expenseForm.get('expenseType');
 
       if (reason === 'OTHER') {
         notesCtrl?.setValidators([Validators.required, Validators.minLength(5)]);
+        expenseTypeCtrl?.setValidators([Validators.required]);
+        expenseTypeCtrl?.enable();
       } else {
         notesCtrl?.clearValidators();
+        const autoType = getExpenseType(reason);
+        expenseTypeCtrl?.setValue(autoType);
+        expenseTypeCtrl?.clearValidators();
+        expenseTypeCtrl?.disable();
       }
 
       notesCtrl?.updateValueAndValidity();
+      expenseTypeCtrl?.updateValueAndValidity();
     });
-
-
-    // this.expenseForm.get('reason')?.valueChanges.subscribe(val => {
-    //   if (val !== 'OTHER') this.expenseForm.get('otherReason')?.setValue('');
-    // });
   }
 
-  private getExpenses(): void {
-    this.isLoadingExpenses = true;
-    this.expensesSubscription = this.expenseService.getExpenses().subscribe({
-      next: (expenses) => {
-        this.expenses = expenses;
-        this.calculateTotals();
-        this.isLoadingExpenses = false
-      },
-      error: (error) => {
+private loadExpenses(): void {
+    this.expenses$ = this.getExpensesObservable().pipe(
+      tap(expenses => {
+        this.expensesCache = expenses;
+        this.calculateTotalsFromList(expenses);
+      }),
+      catchError(error => {
         console.error('Error loading expenses:', error);
         this.messageService.add({
           severity: 'error',
           summary: 'Error',
           detail: 'Failed to load expenses'
         });
-        this.isLoadingExpenses = false
-      }
-    });
+        return of([]);
+      })
+    );
   }
 
-  private calculateTotals(): void {
-    this.totalPending = this.expenses
+  private getExpensesObservable(): Observable<Expense[]> {
+    return this.userService.getCurrentUserRoles().pipe(
+      switchMap(roles => {
+        // Show only expenses for this trip
+        if (this.tripId) {
+          console.log('Loading expenses for trip:', this.tripId);
+          return this.expenseService.getExpensesByTrip(this.tripId);
+        }
+
+        // Show all expenses
+        if (roles.isAdmin || roles.isManager) {
+          console.log('Loading all expenses for admin/manager');
+          return this.expenseService.getExpenses();
+        }
+
+        // Show only their expenses
+        if (roles.isRider) {
+          console.log('Loading expenses for rider');
+          const userId = this.auth.currentUser?.uid;
+          if (userId) {
+            return this.expenseService.getExpensesByUser(userId);
+          }
+        }
+
+        return EMPTY;
+      })
+    );
+  }
+
+  private calculateTotalsFromList(expenses: Expense[]): void {
+    this.totalPending = expenses
       .filter(e => e.status === 'PENDING')
       .reduce((sum, e) => sum + e.amount, 0);
 
-    this.totalApproved = this.expenses
+    this.totalApproved = expenses
       .filter(e => e.status === 'APPROVED')
       .reduce((sum, e) => sum + e.amount, 0);
   }
@@ -191,16 +241,24 @@ export class ExpenseComponent implements OnInit, OnDestroy {
       const currentUser = await this.authService.getCurrentUser();
       if (!currentUser.uid) return;
 
+      const expenseType = getExpenseType(
+        value.reason,
+        value.reason === 'OTHER' ? value.expenseType : undefined
+      );
+
       const expensePayload: Partial<Omit<Expense, 'id'>> = {
         reason: value.reason,
+        expenseType: expenseType,
+        paymentMethod: value.paymentMethod,
         amount: value.amount,
         notes: value.notes || '',
         attachmentUrl: value.attachmentBase64,
-        updatedAt: new Date()
+        updatedAt: new Date(),
+        ...(this.tripId && { tripId: this.tripId })
       };
+      console.log(expensePayload);
 
       if (this.editingExpenseId) {
-        // UPDATE
         await this.expenseService.updateExpense(this.editingExpenseId, expensePayload);
         this.messageService.add({
           severity: 'success',
@@ -208,7 +266,6 @@ export class ExpenseComponent implements OnInit, OnDestroy {
           detail: 'Expense updated successfully'
         });
       } else {
-        // CREATE
         await this.expenseService.addExpense({
           ...expensePayload,
           userId: currentUser.uid,
@@ -226,6 +283,7 @@ export class ExpenseComponent implements OnInit, OnDestroy {
 
       this.visibleDialog = false;
       this.expenseForm.reset();
+      this.selectedImage = '';
       this.editingExpenseId = null;
 
     } catch (error) {
@@ -236,7 +294,6 @@ export class ExpenseComponent implements OnInit, OnDestroy {
   }
 
 
-  // APPROVE FLOW
   approve(id: string): void {
     this.expenseToApprove = id;
     this.visibleApproveConfirm = true;
@@ -248,7 +305,6 @@ export class ExpenseComponent implements OnInit, OnDestroy {
     try {
       const currentUser = { uid: 'admin1', name: 'Admin User' }; // Replace with actual auth
 
-      // Create update payload in component
       const updates: Partial<Omit<Expense, 'id'>> = {
         status: 'APPROVED',
         approvedBy: currentUser.uid,
@@ -278,7 +334,6 @@ export class ExpenseComponent implements OnInit, OnDestroy {
     }
   }
 
-  // REJECT FLOW
   showRejectDialog(id: string): void {
     this.expenseToReject = id;
     this.rejectForm.reset();
@@ -296,7 +351,6 @@ export class ExpenseComponent implements OnInit, OnDestroy {
     try {
       const currentUser = { uid: 'admin1', name: 'Admin User' }; // Replace with actual auth
 
-      // Create update payload in component
       const updates: Partial<Omit<Expense, 'id'>> = {
         status: 'REJECTED',
         rejectionReason: this.rejectForm.value.reason,
@@ -333,37 +387,39 @@ export class ExpenseComponent implements OnInit, OnDestroy {
 
     this.expenseForm.patchValue({
       reason: expense.reason,
+      expenseType: expense.expenseType,
+      paymentMethod: expense.paymentMethod,
       amount: expense.amount,
       notes: expense.notes || '',
-      attachmentBase64: expense.attachmentUrl 
+      attachmentBase64: expense.attachmentUrl
     });
   }
 
-    confirmDeleteExpense(expenseId: string) {
-      console.log("fire")
-      this.confirmationService.confirm({
-        message: `Are you sure you want to delete this expense?`,
-        header: 'Confirm Deletion',
-        icon: 'pi pi-info-circle',
-        rejectLabel: 'Cancel',
-        rejectButtonProps: {
-          label: 'Cancel',
-          severity: 'secondary',
-          outlined: true,
-        },
-        acceptButtonProps: {
-          label: 'Delete',
-          severity: 'danger',
-        },
-  
-        accept: () => {
-          this.deleteExpense(expenseId)
-        },
-        reject: () => {
-          this.messageService.add({ severity: 'error', summary: 'Rejected', detail: 'You have rejected' });
-        },
-      });
-    }
+  confirmDeleteExpense(expenseId: string) {
+    console.log("fire")
+    this.confirmationService.confirm({
+      message: `Are you sure you want to delete this expense?`,
+      header: 'Confirm Deletion',
+      icon: 'pi pi-info-circle',
+      rejectLabel: 'Cancel',
+      rejectButtonProps: {
+        label: 'Cancel',
+        severity: 'secondary',
+        outlined: true,
+      },
+      acceptButtonProps: {
+        label: 'Delete',
+        severity: 'danger',
+      },
+
+      accept: () => {
+        this.deleteExpense(expenseId)
+      },
+      reject: () => {
+        this.messageService.add({ severity: 'error', summary: 'Rejected', detail: 'You have rejected' });
+      },
+    });
+  }
 
   async deleteExpense(id: string): Promise<void> {
     try {
@@ -396,7 +452,7 @@ export class ExpenseComponent implements OnInit, OnDestroy {
 
 
   getExpenseAmount(id: string): number {
-    return this.expenses.find(e => e.id === id)?.amount || 0;
+    return this.expensesCache.find(e => e.id === id)?.amount || 0;
   }
 
   getStatusClass(status: Expense['status']): string {
@@ -411,8 +467,6 @@ export class ExpenseComponent implements OnInit, OnDestroy {
         return 'bg-gray-100 text-gray-800';
     }
   }
-
-  // Helper method to convert Firestore Timestamp to Date for display
   toDate(timestamp: any): Date {
     if (timestamp?.toDate) {
       return timestamp.toDate();

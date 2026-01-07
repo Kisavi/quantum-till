@@ -42,7 +42,7 @@ export class TripService {
   getTripsByUser(userId: string): Observable<Trip[]> {
     const q = query(
       this.tripsRef,
-      where('userId', '==', userId),
+      where('distributor.uid', '==', userId),
       orderBy('startTime', 'desc')
     );
     return collectionData(q, { idField: 'id' }) as Observable<Trip[]>;

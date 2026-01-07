@@ -17,12 +17,21 @@
         class="p-button-rounded"></p-button>
     </div>
   </div>
-
   <p-card>
-    <p-table [value]="expenses" stripedRows showGridlines [scrollable]="true" scrollHeight="flex"
-      [loading]="isLoadingExpenses">
+    @let expenses = expenses$ | async;
+
+    @if (!expenses) {
+    <div class="flex justify-center items-center py-24">
+      <div class="flex flex-col items-center gap-4 text-gray-500">
+        <i class="pi pi-spin pi-spinner text-5xl"></i>
+        <p class="text-sm">Loading expenses...</p>
+      </div>
+    </div>
+    }
+
+    @else {
+    <p-table [value]="expenses" stripedRows showGridlines [scrollable]="true" scrollHeight="flex">
       <ng-template pTemplate="header">
-        <!-- <pre>{{expenses | json}}</pre> -->
         <tr>
           <th>Date</th>
           <th>User</th>
@@ -32,17 +41,31 @@
           <th>Notes</th>
           <th>Status</th>
           <th>Reject Reason</th>
+          @if(isAdmin$ | async) {
           <th>Actions</th>
           <th></th>
+          }
         </tr>
       </ng-template>
+      <tr>
+        <td colspan="8" class="text-center py-20">
+          <div class="flex flex-col items-center gap-6 text-gray-500">
+            <i class="pi pi-box text-8xl opacity-30"></i>
+            <div class="text-center">
+              <p class="text font-medium mb-2">No expenses recorded yet</p>
+            </div>
+          </div>
+        </td>
+      </tr>
       <ng-template pTemplate="body" let-expense>
         <tr class="hover:bg-gray-50">
           <td>{{ expense.createdAt | timestampMillis | date:'dd/MM/yyyy' }}</td>
           <td class="font-medium">{{ expense.userName }}</td>
           <td>
             {{ expense.reason }}
-            <span *ngIf="expense.otherReason" class="text-gray-500">({{ expense.otherReason }})</span>
+            @if(expense.otherReason) {
+            <span class="text-gray-500">({{ expense.otherReason }})</span>
+            }
           </td>
           <td class="text-right font-semibold">KES {{ expense.amount | number }}</td>
           <td>
@@ -60,35 +83,40 @@
           <td>
             {{ expense.rejectionReason }}
           </td>
+          @if(isAdmin$ | async) {
           <td>
-            <div class="flex gap-2" *ngIf="expense.status === 'PENDING'">
+            @if(expense.status === 'PENDING') {
+            <div class="flex gap-2">
               <p-button icon="pi pi-check" severity="success" size="small" rounded pTooltip="Approve"
                 (onClick)="approve(expense.id)"></p-button>
               <p-button icon="pi pi-times" severity="danger" size="small" rounded pTooltip="Reject"
                 (onClick)="showRejectDialog(expense.id)"></p-button>
             </div>
+            }
           </td>
+
           <td>
             <div class="flex gap-2 justify-center">
 
-              <!-- EDIT (only pending) -->
-              <p-button *ngIf="expense.status === 'PENDING'" icon="pi pi-pencil" severity="secondary" size="small"
-                rounded pTooltip="Edit" (onClick)="editExpense(expense)">
+              <!-- edit -->
+              @if(expense.status === 'PENDING') {
+              <p-button icon="pi pi-pencil" severity="secondary" size="small" rounded pTooltip="Edit"
+                (onClick)="editExpense(expense)">
               </p-button>
-
-              <!-- DELETE (only pending) -->
-              <p-button *ngIf="expense.status === 'PENDING'" icon="pi pi-trash" severity="danger" size="small" rounded
-                pTooltip="Delete" (onClick)="confirmDeleteExpense(expense.id)">
+              <!-- delete -->
+              <p-button icon="pi pi-trash" severity="danger" size="small" rounded pTooltip="Delete"
+                (onClick)="confirmDeleteExpense(expense.id)">
               </p-button>
+              }
 
-              <!-- APPROVED / REJECTED -->
+              <!-- APPROVED / Rejected -->
               <span *ngIf="expense.status !== 'PENDING'" class="text-gray-400 text-xs">
                 Locked
               </span>
 
             </div>
           </td>
-
+          }
         </tr>
       </ng-template>
       <ng-template pTemplate="emptymessage">
@@ -104,6 +132,7 @@
         </tr>
       </ng-template>
     </p-table>
+    }
   </p-card>
 
   <!-- Submit Expense Dialog -->
@@ -114,6 +143,20 @@
           <label class="font-medium">Reason <span class="text-red-600">*</span></label>
           <p-select [options]="reasons" formControlName="reason" placeholder="Select reason" class="w-full"></p-select>
         </div>
+        @if(expenseForm.value.reason === 'OTHER') {
+        <div class="flex flex-col gap-2">
+          <label class="font-medium">Expense Type <span class="text-red-600">*</span></label>
+          <p-select [options]="expenseTypes" formControlName="expenseType" placeholder="Select Type"
+            class="w-full"></p-select>
+        </div>
+        }
+
+        <div class="flex flex-col gap-2">
+          <label class="font-medium">Payment Method <span class="text-red-600">*</span></label>
+          <p-select [options]="paymentMethods" formControlName="paymentMethod" placeholder="Select Payment Method"
+            class="w-full"></p-select>
+        </div>
+
         <div class="flex flex-col gap-2">
           <label class="font-medium">Amount (KES) <span class="text-red-600">*</span></label>
           <p-inputNumber formControlName="amount" [min]="1" [showButtons]="true" class="w-full"></p-inputNumber>
@@ -123,8 +166,9 @@
       <div class="flex flex-col gap-2">
         <label class="font-medium">Receipt Photo <span class="text-red-600">*</span></label>
         <input type="file" accept="image/*" (change)="onFileChange($event)" class="w-full p-2 border rounded" />
-        <img *ngIf="expenseForm.value.attachmentBase64" [src]="getPreview()"
-          class="w-full max-w-sm h-64 object-cover rounded mt-3 border" alt="Receipt preview" />
+        @if(expenseForm.get('attachmentBase64')?.value) {
+        <img [src]="getPreview()" class="w-full max-w-sm h-64 object-cover rounded mt-3 border" alt="Receipt preview" />
+        }
       </div>
 
       <div class="flex flex-col gap-2">
@@ -141,12 +185,6 @@
           Notes are required when reason is OTHER
         </small>
       </div>
-
-      <!-- 
-      <div class="flex flex-col gap-2">
-        <label class="font-medium">Notes (optional)</label>
-        <textarea pInputTextarea formControlName="notes" rows="3" class="w-full"></textarea>
-      </div> -->
     </form>
 
     <ng-template pTemplate="footer">

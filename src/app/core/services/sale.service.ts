@@ -7,10 +7,13 @@ import {
   deleteDoc,
   doc,
   Firestore,
+  orderBy,
+  query,
   runTransaction,
   serverTimestamp,
   Timestamp,
   updateDoc,
+  where,
 } from '@angular/fire/firestore';
 import { firstValueFrom, Observable } from 'rxjs';
 import { CartItem } from '../models/cart-item';
@@ -30,7 +33,29 @@ export class SaleService {
   salesCollRef = collection(this.firestore, 'sales') as CollectionReference<Sale>;
 
   getSales(): Observable<Sale[]> {
-    return collectionData(this.salesCollRef);
+    const q = query(
+      this.salesCollRef,
+      orderBy('date', 'desc')
+    );
+    return collectionData(q, { idField: 'id' }) as Observable<Sale[]>;
+  }
+
+  getSalesByUser(userId: string): Observable<Sale[]> {
+    const q = query(
+      this.salesCollRef,
+      orderBy('date', 'desc'),
+      where('rider.uid', '==', userId)
+    );
+    return collectionData(q, { idField: 'id' }) as Observable<Sale[]>;
+  }
+
+  getSalesByTrip(tripId: string): Observable<Sale[]> {
+    const q = query(
+      this.salesCollRef,
+      orderBy('date', 'desc'),
+      where('tripId', '==', tripId)
+    );
+    return collectionData(q, { idField: 'id' }) as Observable<Sale[]>;
   }
 
   async checkout(
@@ -39,6 +64,7 @@ export class SaleService {
     items: CartItem[],
     totalPrice: number,
     status: SaleStatus,
+    tripId?: string | null
   ): Promise<void> {
     const currentUser = await firstValueFrom(this.userService.getCurrentUser());
 
@@ -46,16 +72,20 @@ export class SaleService {
       throw new Error('Current user not found');
     }
 
-    // use a transaction to avoid race conditions and inconsistent stock
+    // Use a transaction to avoid race conditions and inconsistent stock
     return runTransaction(this.firestore, async (transaction) => {
       const stockCollRef = this.stockService.stockCollRef;
 
-      // Reduce stock levels of all items in the cart
-      items.forEach((cartItem) => {
-        const stockItemDocRef = doc(stockCollRef, cartItem.stockItem.id);
-        const quantity = cartItem.stockItem.quantity - cartItem.quantity;
-        transaction.update(stockItemDocRef, { quantity });
-      });
+      // Only reduce stock if not a trip sale
+      if (!tripId) {
+        // Reduce stock levels of all items in the cart
+        items.forEach((cartItem) => {
+          const stockItemDocRef = doc(stockCollRef, cartItem.stockItem.id);
+          const quantity = cartItem.stockItem.quantity - cartItem.quantity;
+          transaction.update(stockItemDocRef, { quantity });
+        });
+      }
+      // If tripId exists, stock is tracked via trip allocations
 
       // Create and record sale
       const docRef = doc(this.salesCollRef);
@@ -68,6 +98,7 @@ export class SaleService {
         items,
         totalPrice,
         status,
+        ...(tripId && { tripId })
       };
 
       transaction.set(docRef, sale);

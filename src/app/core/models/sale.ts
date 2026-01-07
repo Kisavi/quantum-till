@@ -1,10 +1,11 @@
-import { FieldValue, Timestamp } from '@angular/fire/firestore';
+import { Timestamp } from '@angular/fire/firestore';
 import { CartItem } from './cart-item';
 import { Customer } from './customer';
 import { User } from './user';
 
 export interface Sale {
   id: string;
+  tripId?: string;
   rider: User;
   customer: Customer;
   items: CartItem[];

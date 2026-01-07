@@ -1,10 +1,10 @@
 import { DistributionRoute } from './distribution-route';
+import { User } from './user';
 import { Vehicle } from './vehicle';
 
 export interface Trip {
   id?: string;
-  userId: string;
-  driverName: string;
+  distributor: User;
   route: DistributionRoute;
   vehicle: Vehicle;
   startOdometerReading: number;
@@ -14,13 +14,13 @@ export interface Trip {
   status: 'PENDING' | 'ONGOING' | 'ENDED';
   totalKm?: number;
   durationMinutes?: number;
+  createdOn: Date
 }
 
 export type TripStatus = 'PENDING' | 'ONGOING' | 'ENDED';
 
 export interface CreateTripDto {
-  userId: string;
-  driverName: string;
+  distributor: User;
   route: DistributionRoute;
   vehicle: Vehicle;
   startOdometerReading: number;
@@ -30,4 +30,5 @@ export interface CreateTripDto {
 
 export interface EndTripDto {
   endOdometerReading: number;
+  endTime: Date;
 }

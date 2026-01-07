@@ -1,11 +1,12 @@
 import { Product } from "./product";
+import { User } from "./user";
 
 export interface TripStockAllocation {
     id: string;
     tripId: string;
     product: Product;
     quantity: number;
-    allocatedBy: string;
+    allocatedBy: User;
     allocatedAt: Date;
     sourceStockExpiry?: string;
 }

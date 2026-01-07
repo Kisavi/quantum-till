@@ -5,12 +5,19 @@ export type ExpenseStatus =
   | 'APPROVED'
   | 'REJECTED';
 
+export type ExpenseType = 'COMPANY' | 'PERSONAL';
+export type ExpensePaymentMethod = 'CASH' | 'MPESA';
+
+
 export interface Expense {
   id: string;
   reason: ExpenseReason;
+  expenseType: ExpenseType;
+  paymentMethod: ExpensePaymentMethod;
   amount: number;
   attachmentUrl: string;
   notes?: string;
+  tripId?: string;
   userId: string;
   userName: string;
   createdAt: Date;
@@ -24,7 +31,9 @@ export interface Expense {
 
 export interface CreateExpenseDto {
   reason: ExpenseReason;
+  expenseType: ExpenseType;
   amount: number;
   attachmentBase64: string;
   notes?: string;
+  tripId?: string;
 }

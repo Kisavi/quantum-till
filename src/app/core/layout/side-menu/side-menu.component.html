@@ -85,7 +85,7 @@
   </span>
 
   <div class="grow overflow-auto w-60 pb-8">
-    <p-menu [model]="items" styleClass="border-0!">
+    <p-menu [model]="visibleItems" styleClass="border-0!">
       <ng-template #submenuheader let-item>
         <span class="font-bold">{{ item.label }}</span>
       </ng-template>

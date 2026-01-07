@@ -32,7 +32,7 @@
           <td>{{ sale.rider.displayName }}</td>
           <td>{{ sale.customer.name }}</td>
           <td>{{ sale.items.length }}</td>
-          <td>{{ sale.totalPrice | currency }}</td>
+          <td>{{ sale.totalPrice | currency: 'KSH ' }}</td>
           <td>{{ sale.paymentMethod }}</td>
           <td>
             @if (sale.status === 'COMPLETED') {

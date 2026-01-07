@@ -1,35 +1,45 @@
-import { AuthGuard, redirectLoggedInTo, redirectUnauthorizedTo } from '@angular/fire/auth-guard';
 import { Routes } from '@angular/router';
 import { MainLayoutComponent } from './core/layout/main-layout/main-layout.component';
+import { redirectLoggedInToRoleDashboard, roleGuard } from './core/guards/role-guard';
 
 export const routes: Routes = [
   {
     path: 'auth',
-    canActivate: [AuthGuard],
-    data: { authGuardPipe: () => redirectLoggedInTo(['/dashboard']) },
+    canActivate: [redirectLoggedInToRoleDashboard],
     loadChildren: () => import('./features/auth/auth.routes').then((m) => m.routes),
   },
+
   {
     path: 'user-validation',
-    data: { authGuardPipe: () => redirectUnauthorizedTo(['/auth']) },
     loadComponent: () =>
       import('./features/user-validation/user-validation.component').then(
         (m) => m.UserValidationComponent,
       ),
   },
+
   {
     path: '',
-    canActivate: [AuthGuard],
-    data: { authGuardPipe: () => redirectUnauthorizedTo(['/auth']) },
     component: MainLayoutComponent,
     children: [
       {
         path: 'dashboard',
+        canActivate: [roleGuard(['ADMIN', 'MANAGER'])],
         loadComponent: () =>
-          import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent),
+          import('./features/dashboards/admin-dashboard/admin-dashboard.component').then((m) => m.AdminDashboardComponent),
       },
       {
+        path: 'distributor/dashboard',
+        canActivate: [roleGuard(['RIDER'])],
+        loadComponent: () =>
+          import('./features/dashboards/distributor-dashboard/distributor-dashboard.component').then(
+            (m) => m.DistributorDashboardComponent,
+          ),
+      },
+
+
+      {
         path: 'distributors',
+        canActivate: [roleGuard(['ADMIN', 'MANAGER'])],
         loadComponent: () =>
           import('./features/distributors/distributors.component').then(
             (m) => m.DistributorsComponent,
@@ -37,25 +47,21 @@ export const routes: Routes = [
       },
       {
         path: 'trips',
+        canActivate: [roleGuard(['ADMIN', 'MANAGER'])],
         loadComponent: () =>
           import('./features/trip/trips/trips.component').then((m) => m.TripsComponent),
       },
       {
         path: 'routes',
+        canActivate: [roleGuard(['ADMIN', 'MANAGER'])],
         loadComponent: () =>
           import('./features/distribution-routes/distribution-route-list/distribution-route-list.component').then(
             (m) => m.DistributionRouteListComponent,
           ),
       },
       {
-        path: 'customers',
-        loadComponent: () =>
-          import('./features/customers/customer-list/customer-list.component').then(
-            (m) => m.CustomerListComponent,
-          ),
-      },
-      {
         path: 'products',
+        canActivate: [roleGuard(['ADMIN', 'MANAGER'])],
         loadComponent: () =>
           import('./features/products/product-list/product-list.component').then(
             (m) => m.ProductListComponent,
@@ -63,40 +69,59 @@ export const routes: Routes = [
       },
       {
         path: 'stock',
+        canActivate: [roleGuard(['ADMIN', 'MANAGER'])],
         loadComponent: () =>
           import('./features/stock/stock-list/stock-list.component').then(
             (m) => m.StockListComponent,
           ),
       },
       {
-        path: 'sales',
-        loadChildren: () => import('./features/sales/sales.routes').then((m) => m.routes),
-      },
-      {
         path: 'assets',
+        canActivate: [roleGuard(['ADMIN', 'MANAGER'])],
         loadComponent: () =>
           import('./features/assets/assets.component').then((m) => m.AssetsComponent),
       },
       {
-        path: 'expenses',
-        loadComponent: () =>
-          import('./features/expense/expense.component').then((m) => m.ExpenseComponent),
-      },
-      {
         path: 'inventory',
+        canActivate: [roleGuard(['ADMIN', 'MANAGER'])],
         loadComponent: () =>
           import('./features/inventory/inventory.component').then((m) => m.InventoryComponent),
       },
       {
-        path: 'returns',
-        loadComponent: () =>
-          import('./features/returns/returns.component').then((m) => m.ReturnsComponent),
-      },
-      {
         path: 'users',
+        canActivate: [roleGuard(['ADMIN', 'MANAGER'])],
         loadComponent: () =>
           import('./features/users/user-list/user-list.component').then((m) => m.UserListComponent),
       },
+
+      // Shared routes for all authenticated users
+      {
+        path: 'customers',
+        canActivate: [roleGuard(['ADMIN', 'MANAGER', 'RIDER'])],
+        loadComponent: () =>
+          import('./features/customers/customer-list/customer-list.component').then(
+            (m) => m.CustomerListComponent,
+          ),
+      },
+      {
+        path: 'sales',
+        canActivate: [roleGuard(['ADMIN', 'MANAGER', 'RIDER'])],
+        loadChildren: () => import('./features/sales/sales.routes').then((m) => m.routes),
+      },
+      {
+        path: 'expenses',
+        canActivate: [roleGuard(['ADMIN', 'MANAGER', 'RIDER'])],
+        loadComponent: () =>
+          import('./features/expense/expense.component').then((m) => m.ExpenseComponent),
+      },
+      {
+        path: 'returns',
+        canActivate: [roleGuard(['ADMIN', 'MANAGER', 'RIDER'])],
+        loadComponent: () =>
+          import('./features/returns/returns.component').then((m) => m.ReturnsComponent),
+      },
+
+      // Default redirects
       {
         path: '',
         redirectTo: 'user-validation',

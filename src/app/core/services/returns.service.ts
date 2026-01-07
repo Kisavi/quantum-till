@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { ReturnItem } from '../models/return-item';
-import { Firestore, collection, collectionData, addDoc, doc, updateDoc, deleteDoc } from '@angular/fire/firestore';
+import { Firestore, collection, collectionData, addDoc, doc, updateDoc, deleteDoc, query, where, orderBy } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 
 @Injectable({
@@ -11,7 +11,31 @@ export class ReturnsService {
   private returnsRef = collection(this.firestore, 'returns');
 
   getAllReturns(): Observable<ReturnItem[]> {
-    return collectionData(this.returnsRef, { idField: 'id' }) as Observable<ReturnItem[]>;
+    const q = query(
+      this.returnsRef,
+      orderBy('returnDate', 'desc')
+    )
+    return collectionData(q, { idField: 'id' }) as Observable<ReturnItem[]>;
+  }
+
+  //  get returns by user (for riders to see only their returns)
+  getReturnsByUser(userId: string): Observable<ReturnItem[]> {
+    const q = query(
+      this.returnsRef,
+      orderBy('returnDate', 'desc'),
+      where('createdBy', '==', userId)
+    );
+    return collectionData(q, { idField: 'id' }) as Observable<ReturnItem[]>;
+  }
+
+  // get trip specific returns
+  getReturnsByTrip(tripId: string): Observable<ReturnItem[]> {
+    const q = query(
+      this.returnsRef,
+      orderBy('returnDate', 'desc'),
+      where('tripId', '==', tripId)
+    );
+    return collectionData(q, { idField: 'id' }) as Observable<ReturnItem[]>;
   }
 
   async createReturn(returnItem: ReturnItem): Promise<void> {

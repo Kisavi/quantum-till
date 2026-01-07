@@ -19,9 +19,26 @@ export const ASSET_CATEGORIES = [
 
 export type AssetCategory = typeof ASSET_CATEGORIES[number];
 
+export interface Asset {
+  id: string;
+  name: string;
+  category: string;
+  brand?: string;
+  model?: string;
+  serialNumber?: string;
+  purchaseDate: Date;
+  purchaseCost: number;
+  status: AssetStatus;
+  notes?: string;
+  photoUrl?: string;
+  dateAdded: Date;
+  createdBy?: string;
+  updatedAt?: Date;
+}
+
 export interface CreateAssetDto {
   name: string;
-  category: string;          
+  category: string;
   brand?: string;
   model?: string;
   serialNumber?: string;
@@ -29,11 +46,5 @@ export interface CreateAssetDto {
   purchaseCost: number;
   status: AssetStatus;
   notes?: string;
-  photoBase64?: string;       
-}
-
-export interface Asset extends CreateAssetDto {
-  id: string;
-  photoUrl?: string;
-  dateAdded: Date;
+  photoBase64?: string;
 }

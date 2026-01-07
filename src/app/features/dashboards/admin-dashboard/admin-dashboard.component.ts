@@ -1,18 +1,14 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { TableModule } from 'primeng/table';
-
-import { Auth } from '@angular/fire/auth';
-import { Router } from '@angular/router';
-import { ButtonDirective } from "primeng/button";
 import { CardModule } from 'primeng/card';
 import { ChartModule } from 'primeng/chart';
 
 @Component({
-  selector: 'app-dashboard',
+  selector: 'app-admin-dashboard',
   imports: [TableModule, CardModule, ChartModule],
-  templateUrl: './dashboard.component.html',
+   templateUrl: './admin-dashboard.component.html'
 })
-export class DashboardComponent implements OnInit {
+export class AdminDashboardComponent implements OnInit {
   constructor() {}
 
    ngOnInit() {
@@ -59,10 +55,10 @@ export class DashboardComponent implements OnInit {
         {
           data: [300, 50, 100, 150],  // Sample quantities or sales per category
           backgroundColor: [
-            '#FF6384',  // Red
-            '#36A2EB',  // Blue
-            '#FFCE56',  // Yellow
-            '#4BC0C0'   // Teal
+            '#FF6384',  
+            '#36A2EB',  
+            '#FFCE56',  
+            '#4BC0C0'   
           ],
           hoverBackgroundColor: [
             '#FF6384',
@@ -82,7 +78,7 @@ export class DashboardComponent implements OnInit {
           position: 'bottom',
           labels: {
             usePointStyle: true,
-            color: '#6B7280'  // Matches your gray theme
+            color: '#6B7280'  
           }
         }
       }
@@ -108,7 +104,7 @@ export class DashboardComponent implements OnInit {
       datasets: [
         {
           label: 'Sales (Ksh)',
-          backgroundColor: '#3B82F6',  // Blue to match your theme
+          backgroundColor: '#3B82F6', 
           borderColor: '#1D4ED8',
           data: [650000, 590000, 800000, 810000, 560000, 550000, 400000, 700000, 600000, 750000, 900000, 950000]
         }
@@ -122,10 +118,10 @@ export class DashboardComponent implements OnInit {
         y: {
           beginAtZero: true,
           ticks: {
-            color: '#6B7280'  // Gray labels
+            color: '#6B7280'  
           },
           grid: {
-            color: '#E5E7EB'  // Light gray grid
+            color: '#E5E7EB'  
           }
         },
         x: {
@@ -160,3 +156,4 @@ export class DashboardComponent implements OnInit {
     ];
   }
 }
+
