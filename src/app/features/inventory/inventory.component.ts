@@ -158,18 +158,16 @@ export class InventoryComponent implements OnInit {
     });
   }
 
-  // ---------------- DATA LOADING ----------------
-
   loadData(): void {
-    this.isLoading = true;
 
     combineLatest([
       this.inventoryService.getConsolidatedStock(),
       this.inventoryService.getStockEntries(),
       this.inventoryService.getCategories(),
       this.inventoryService.getItems()
-    ]).pipe(finalize(() => { this.isLoadingItems = false,this.isLoading = false })).subscribe({
+    ]).subscribe({
       next: ([stock, raw, categories, items]) => {
+       
         this.inventory = stock;
         this.categories = categories;
         this.items = items.map(i => {
@@ -200,12 +198,16 @@ export class InventoryComponent implements OnInit {
         ];
 
         this.updateFilteredItemOptions();
+        this.isLoading = false;
+      this.isLoadingItems = false;
       },
       error: () => {
         this.messageService.add({
           severity: 'error',
           detail: 'Failed to load inventory data'
         });
+        this.isLoading = false;
+        this.isLoadingItems = false;
       }
     });
   }
@@ -248,8 +250,6 @@ export class InventoryComponent implements OnInit {
     reader.readAsDataURL(file);
   }
 
-  // ---------------- DROPDOWNS ----------------
-
   updateFilteredItemOptions(): void {
     const categoryId = this.stockEntryForm.get('categoryId')?.value;
 
@@ -266,8 +266,6 @@ export class InventoryComponent implements OnInit {
       ...filtered.map(i => ({ label: i.name, value: i.id }))
     ];
   }
-
-  // ---------------- CREATE CATEGORY ----------------
 
   async addNewCategory(): Promise<void> {
     if (this.categoryForm.invalid) {
@@ -298,8 +296,6 @@ export class InventoryComponent implements OnInit {
       this.isCreatingCategory = false;
     }
   }
-
-  // ---------------- CREATE ITEM ----------------
 
     showItemDialog(item?: RawMaterialItem): void {
     this.rawMaterialItemForm.reset();
@@ -440,8 +436,6 @@ export class InventoryComponent implements OnInit {
     }
   } 
 
-  // ---------------- ADD RAW MATERIAL ----------------
-
   async saveInventory(): Promise<void> {
     if (this.stockEntryForm.invalid) {
       this.stockEntryForm.markAllAsTouched();
@@ -513,8 +507,6 @@ export class InventoryComponent implements OnInit {
     }
   }
 
-  // ---------------- UI HELPERS ----------------
-
   getStatusClass(status: ConsolidatedStock['status']): string {
     switch (status) {
       case 'In Stock':
@@ -535,8 +527,6 @@ export class InventoryComponent implements OnInit {
     }
   }
 
-
-  // ---------------- DELETE ITEM + HISTORY ----------------
   confirmDeleteEntry(entry: StockEntryDisplay) {
     this.confirmationService.confirm({
       message: `Do you want to delete this ${entry.itemName} record?`,

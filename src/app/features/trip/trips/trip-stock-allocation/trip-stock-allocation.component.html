@@ -214,9 +214,9 @@
                             {{ formatAllocationQuantity(allocation.quantity, allocation.product) }}
                         </td>
                         <td class="text-right font-semibold text-blue-600">
-                            {{ (allocation.quantity * allocation.product.unitPrice) | currency:'KES':'symbol':'1.2-2' }}
+                            {{ getAllocationTotalValue(allocation) | currency:'KES':'symbol':'1.2-2' }}
                         </td>
-                        <td>{{ allocation.allocatedBy }}</td>
+                        <td>{{ allocation.allocatedBy.displayName }}</td>
                         <td>{{ toDate(allocation.allocatedAt) | date:'dd/MM/yyyy HH:mm' }}</td>
                         <td>
                             <div class="flex justify-center gap-2">

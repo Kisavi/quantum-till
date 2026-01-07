@@ -21,6 +21,12 @@ import { UserService } from '../../../core/services/user.service';
 import { User } from '../../../core/models/user';
 import { TimestampMillisPipe } from '../../../core/pipes/timestamp-millis.pipe';
 import { TripStockAllocationComponent } from './trip-stock-allocation/trip-stock-allocation.component';
+import { TripAllocationService } from '../../../core/services/trip-allocation.service';
+import { map, Subscription, take } from 'rxjs';
+import { TripStockCalculatorService } from '../../../core/services/trip-stock-calculator.service';
+import { AssetsService } from '../../../core/services/assets.service';
+import { Asset } from '../../../core/models/assets';
+import { DistributionRouteService } from '../../../core/services/distribution-route.service';
 
 @Component({
   selector: 'app-trips',
@@ -47,25 +53,16 @@ export class TripsComponent implements OnInit {
 
   trips: Trip[] = [];
   distributors: User[] = [];
-  routes: DistributionRoute[] = [
-    { id: '1', name: 'Mariakani' },
-    { id: '2', name: 'Mombasa' },
-    { id: '3', name: 'Kilifi' },
-    { id: '4', name: 'Lamu' },
-  ];
+  routes: DistributionRoute[] = [];
 
-  vehicles: Vehicle[] = [
-    { id: 'v1', regNo: 'KCK 9039', model: 'Mazda Demio' },
-    { id: 'v2', regNo: 'KDB 9045', model: 'Mazda Demio' },
-    { id: 'v3', regNo: 'KCB 123A', model: 'Toyota Probox' },
-  ];
+  vehicles: Vehicle[] = [];
 
   isLoadingTrips = true;
   isCreatingTrip = false;
   isStartingTrip = false;
   isEndingTrip = false;
 
-  /** Dialogs */
+  //Dialog
   visibleCreateDialog = false;
   visibleStartDialog = false;
   visibleEndDialog = false;
@@ -73,11 +70,17 @@ export class TripsComponent implements OnInit {
   visibleAllocateDialog = false;
 
   selectedTrip: Trip | null = null;
+  activeTrip: Trip | null = null;
+  loadingVehicles = true;
 
   createForm!: FormGroup;
   endForm!: FormGroup;
   private userService = inject(UserService)
-
+  private tripALlocationService = inject(TripAllocationService);
+  private tripStockCalculator = inject(TripStockCalculatorService);
+  private assetService = inject(AssetsService);
+  private assetsSubscription?: Subscription;
+  private distributionRouteService = inject(DistributionRouteService);
   constructor(
     private fb: FormBuilder,
     private tripService: TripService,
@@ -86,8 +89,66 @@ export class TripsComponent implements OnInit {
 
   ngOnInit(): void {
     this.initForms();
+    this.loadVehicles();
+    this.loadRoutes();
     this.loadTrips();
     this.getUsersExcludingCooks();
+  }
+
+  private initForms(): void {
+    this.createForm = this.fb.group({
+      userId: ['', Validators.required],
+      routeId: ['', Validators.required],
+      vehicleId: ['', Validators.required],
+      startOdometerReading: [null, [Validators.required, Validators.min(1)]],
+    });
+
+    this.endForm = this.fb.group({
+      endOdometerReading: [null, [Validators.required, Validators.min(1)]],
+    });
+  }
+
+  private loadVehicles(): void {
+    this.assetsSubscription = this.assetService.getAssets().pipe(
+      map(assets => assets.filter(asset => asset.category === 'Vehicle'))
+    ).subscribe({
+
+      next: (vehicleAssets: Asset[]) => {
+        this.loadingVehicles = false;
+        console.log('Vehicle Assets:', vehicleAssets);
+        this.vehicles = vehicleAssets.map(asset => ({
+          id: asset.id,
+          regNo: asset.name, 
+          model: asset.model || ''
+        }));
+      },
+      error: (error) => {
+        console.error('Error loading vehicles:', error);
+        this.loadingVehicles = false;
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Failed to load vehicles'
+        });
+      }
+    });
+  }
+
+
+  private loadRoutes(): void {
+    this.distributionRouteService.getDistributionRoutes().subscribe({
+      next: (routes) => {
+        this.routes = routes;
+      },
+      error: (error) => {
+        console.error('Error loading routes:', error);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Failed to load routes'
+        });
+      }
+    });
   }
 
   getUsersExcludingCooks(): void {
@@ -102,20 +163,6 @@ export class TripsComponent implements OnInit {
           detail: 'Failed to load users'
         });
       }
-    });
-  }
-
-
-  private initForms(): void {
-    this.createForm = this.fb.group({
-      userId: ['', Validators.required],
-      routeId: ['', Validators.required],
-      vehicleId: ['', Validators.required],
-      startOdometerReading: [null, [Validators.required, Validators.min(1)]],
-    });
-
-    this.endForm = this.fb.group({
-      endOdometerReading: [null, [Validators.required, Validators.min(1)]],
     });
   }
 
@@ -163,8 +210,7 @@ export class TripsComponent implements OnInit {
     if (!selectedUser) return;
 
     const trip: CreateTripDto = {
-      userId: selectedUser.uid,
-      driverName: selectedUser.displayName || '',
+      distributor: selectedUser,
       route,
       vehicle,
       startOdometerReading: dto.startOdometerReading,
@@ -185,25 +231,71 @@ export class TripsComponent implements OnInit {
     }
   }
 
+
   showStartDialog(trip: Trip): void {
     if (trip.status !== 'PENDING') return;
-    this.selectedTrip = trip;
-    this.visibleStartDialog = true;
-  }
 
+    this.tripALlocationService.getAllocationsByTrip(trip.id!).pipe(
+      take(1)
+    ).subscribe({
+      next: (allocations) => {
+        if (allocations.length === 0) {
+          this.messageService.add({
+            severity: 'warn',
+            summary: 'Cannot Start Trip',
+            detail: 'Please allocate stock before starting the trip',
+            life: 5000
+          });
+          return;
+        }
+
+        this.activeTrip = trip;
+        this.visibleStartDialog = true;
+      },
+      error: () => {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Failed to check trip allocations'
+        });
+      }
+    });
+  }
   async startTrip(): Promise<void> {
-    if (!this.selectedTrip) return;
+    if (!this.activeTrip) return;
 
     this.isStartingTrip = true;
 
-    await this.tripService.updateTrip(this.selectedTrip.id!, {
-      status: 'ONGOING',
-      startTime: new Date()
-    });
+    try {
+      await this.tripService.updateTrip(this.activeTrip.id!, {
+        status: 'ONGOING',
+        startTime: new Date(),
+      });
 
-    this.visibleStartDialog = false;
-    this.isStartingTrip = false;
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Trip Started',
+        detail: 'The trip has been started successfully.',
+        life: 4000,
+      });
+
+      this.visibleStartDialog = false;
+
+    } catch (error) {
+      console.error('Error starting trip:', error);
+
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Start Failed',
+        detail: 'Failed to start trip. Please try again.',
+        life: 5000,
+      });
+
+    } finally {
+      this.isStartingTrip = false;
+    }
   }
+
 
 
   showEndDialog(trip: Trip): void {
@@ -218,7 +310,6 @@ export class TripsComponent implements OnInit {
   async endTrip(): Promise<void> {
     if (!this.selectedTrip || this.endForm.invalid) return;
 
-
     const endReading = this.endForm.value.endOdometerReading;
     if (!endReading || endReading <= this.selectedTrip.startOdometerReading) {
       this.messageService.add({
@@ -228,25 +319,49 @@ export class TripsComponent implements OnInit {
       });
       return;
     }
+
     this.isEndingTrip = true;
 
-    const endTime = new Date();
-    const totalKm = endReading - this.selectedTrip.startOdometerReading;
+    try {
+      const endTime = new Date();
+      const totalKm = endReading - this.selectedTrip.startOdometerReading;
+      const durationMinutes = Math.round(
+        (endTime.getTime() - new Date(this.selectedTrip.startTime).getTime()) / 60000
+      );
 
-    const durationMinutes = Math.round(
-      (endTime.getTime() - new Date(this.selectedTrip.startTime).getTime()) / 60000
-    );
+      // 1. Update trip status
+      await this.tripService.updateTrip(this.selectedTrip.id!, {
+        endOdometerReading: endReading,
+        endTime,
+        totalKm,
+        durationMinutes,
+        status: 'ENDED'
+      });
 
-    await this.tripService.updateTrip(this.selectedTrip.id!, {
-      endOdometerReading: endReading,
-      endTime,
-      totalKm,
-      durationMinutes,
-      status: 'ENDED'
-    });
+      // 2. Calculate remaining stock and return to warehouse
+      const remainingStock = await this.tripStockCalculator.calculateRemainingTripStock(
+        this.selectedTrip.id!
+      );
 
-    this.visibleEndDialog = false;
-    this.isEndingTrip = false;
+      await this.tripStockCalculator.returnStockToWarehouse(remainingStock);
+
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Success',
+        detail: 'Trip ended and remaining stock returned to warehouse'
+      });
+
+      this.visibleEndDialog = false;
+    } catch (error: any) {
+      console.error('Error ending trip:', error);
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: error.message || 'Failed to end trip'
+      });
+    } finally {
+      this.isEndingTrip = false;
+    }
   }
 
   getStatusClass(status: Trip['status']) {
@@ -258,46 +373,44 @@ export class TripsComponent implements OnInit {
     }
   }
 
-getDuration(start: any, end: any): string {
-  if (!start || !end) return '—';
+  getDuration(start: any, end: any): string {
+    if (!start || !end) return '—';
 
-  // Convert Firestore Timestamp or Date to milliseconds
-  const startMs = start.seconds ? start.seconds * 1000 : start.getTime();
-  const endMs = end.seconds ? end.seconds * 1000 : end.getTime();
+    // Convert Firestore Timestamp or Date to milliseconds
+    const startMs = start.seconds ? start.seconds * 1000 : start.getTime();
+    const endMs = end.seconds ? end.seconds * 1000 : end.getTime();
 
-  let diffMs = endMs - startMs;
-  if (diffMs < 0) return '—'; 
+    let diffMs = endMs - startMs;
+    if (diffMs < 0) return '—';
 
-  const minutes = Math.floor(diffMs / 60000);
-  const hours = Math.floor(minutes / 60);
-  const days = Math.floor(hours / 24);
+    const minutes = Math.floor(diffMs / 60000);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
 
-  const remainingHours = hours % 24;
-  const remainingMinutes = minutes % 60;
+    const remainingHours = hours % 24;
+    const remainingMinutes = minutes % 60;
 
-  if (days > 0) {
-    return `${days}d ${remainingHours}h ${remainingMinutes}m`;
-  } else if (hours > 0) {
-    return `${hours}h ${remainingMinutes}m`;
-  } else if (minutes > 0) {
-    return `${minutes}m`;
-  } else {
-    return '1m';
+    if (days > 0) {
+      return `${days}d ${remainingHours}h ${remainingMinutes}m`;
+    } else if (hours > 0) {
+      return `${hours}h ${remainingMinutes}m`;
+    } else if (minutes > 0) {
+      return `${minutes}m`;
+    } else {
+      return '1m';
+    }
   }
-}
 
-showAllocateDialog(trip: Trip): void {
-  this.selectedTrip = trip;
-  this.visibleAllocateDialog = true;
-}
+  showAllocateDialog(trip: Trip): void {
+    this.selectedTrip = trip;
+    this.visibleAllocateDialog = true;
+  }
 
-selectTripForAllocation(trip: Trip): void {
-  this.selectedTrip = trip;
-}
+  selectTripForAllocation(trip: Trip): void {
+    this.selectedTrip = trip;
+  }
 
-clearSelectedTrip(): void {
-  this.selectedTrip = null;
-}
-
-
+  clearSelectedTrip(): void {
+    this.selectedTrip = null;
+  }
 }

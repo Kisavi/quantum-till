@@ -12,9 +12,12 @@
       <div
         class="flex justify-between font-semibold mb-2 p-3 border-b border-dotted border-slate-200 last:border-0"
       >
-        <div>{{ item.stockItem.product.name }} x {{ item.quantity }}</div>
+         <div>
+          <span class="font-medium">{{ item.stockItem.product.name }}</span>
+          <span class="text-gray-600 font-normal ml-2">× {{ formatQuantity(item.quantity, item.stockItem.product) }}</span>
+        </div>
         <div class="font-semibold">
-          {{ item.stockItem.product.unitPrice * item.quantity | currency }}
+          {{ getItemTotalValue(item) | currency: 'KSh ' }}
         </div>
       </div>
     }
@@ -58,7 +61,7 @@
 
     <div class="flex justify-between mb-1">
       <div class="font-medium text-gray-700">Total</div>
-      <div class="font-bold">{{ sale()?.totalPrice | currency }}</div>
+      <div class="font-bold">{{ sale()?.totalPrice | currency: 'KSh ' }}</div>
     </div>
   </div>
 

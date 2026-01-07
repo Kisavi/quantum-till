@@ -20,6 +20,10 @@ import { ProductService } from '../../core/services/product.service';
 import { StockService } from '../../core/services/stock.service';
 import { TimestampMillisPipe } from '../../core/pipes/timestamp-millis.pipe';
 import { TagModule } from 'primeng/tag';
+import { Auth } from '@angular/fire/auth';
+import { ActivatedRoute } from '@angular/router';
+import { UserService } from '../../core/services/user.service';
+import { EMPTY, Observable, switchMap } from 'rxjs';
 
 @Component({
   selector: 'app-returns',
@@ -43,7 +47,7 @@ import { TagModule } from 'primeng/tag';
   templateUrl: './returns.component.html',
 })
 export class ReturnsComponent implements OnInit {
-  isLoadingReturns = false;
+  isLoadingReturns = true;
   isSavingReturn = false;
 
   returns: ReturnItem[] = [];
@@ -65,13 +69,18 @@ export class ReturnsComponent implements OnInit {
 
   returnReasons: ReturnReason[] = ['EXPIRED', 'DAMAGED', 'SPOILT', 'UNSOLD', 'WRONG_ITEM', 'OTHER'];
   returnReasonOptions = this.returnReasons.map(r => ({ label: r, value: r }));
+  tripId?: string;
+  showFilters = true;
 
-  private currentUserId = 'ADMIN_UID';
 
   private customerService = inject(CustomerService);
   private productService = inject(ProductService);
   private stockService = inject(StockService);
   private confirmationService = inject(ConfirmationService);
+  private auth = inject(Auth);
+  private route = inject(ActivatedRoute)
+  private userService = inject(UserService);
+  isAdmin$ = this.userService.isAdmin();
 
   returnForm: FormGroup;
 
@@ -90,8 +99,10 @@ export class ReturnsComponent implements OnInit {
     });
   }
 
-  ngOnInit(): void {
-    this.loadReturns();
+  async ngOnInit(): Promise<void> {
+    this.tripId = this.route.snapshot.queryParams['tripId'];
+    this.showFilters = !this.tripId;
+    await this.loadReturns(); 
 
     this.productService.getProducts().subscribe(p => this.products = p || []);
 
@@ -103,6 +114,68 @@ export class ReturnsComponent implements OnInit {
       ];
     });
   }
+
+  async loadReturns(): Promise<void> {
+    this.isLoadingReturns = true;
+
+    try {
+      const returns$ = this.getReturnsObservable();
+
+      if (!returns$) {
+        this.isLoadingReturns = false;
+        return;
+      }
+
+      returns$.subscribe({
+        next: data => {
+          this.returns = data;
+          this.applyFilters();
+          this.isLoadingReturns = false;
+        },
+        error: err => {
+          console.error('Error loading returns:', err);
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Failed to load returns'
+          });
+          this.isLoadingReturns = false;
+        }
+      });
+
+    } catch (error) {
+      console.error('Error loading returns:', error);
+      this.isLoadingReturns = false;
+    }
+  }
+
+private getReturnsObservable(): Observable<ReturnItem[]> {
+  return this.userService.getCurrentUserRoles().pipe(
+    switchMap(roles => {
+      if (this.tripId) {
+        console.log('Loading returns for trip:', this.tripId);
+        return this.returnsService.getReturnsByTrip(this.tripId);
+      }
+
+      if (roles.isAdmin || roles.isManager) {
+        console.log('Loading all returns for admin/manager');
+        return this.returnsService.getAllReturns();
+      }
+
+      if (roles.isRider) {
+        console.log('Loading returns for rider');
+        const userId = this.auth.currentUser?.uid;
+        if (userId) {
+          return this.returnsService.getReturnsByUser(userId);
+        }
+      }
+
+      return EMPTY;
+    })
+  );
+}
+
+
 
   applyFilters(): void {
     let filtered = [...this.returns];
@@ -154,14 +227,7 @@ export class ReturnsComponent implements OnInit {
     this.applyFilters();
   }
 
-  loadReturns(): void {
-    this.isLoadingReturns = true;
-    this.returnsService.getAllReturns().subscribe(data => {
-      this.returns = data;
-      this.applyFilters();
-      this.isLoadingReturns = false;
-    });
-  }
+
 
   showTakeReturnDialog(): void {
     this.editingReturnId = null;
@@ -222,18 +288,28 @@ export class ReturnsComponent implements OnInit {
       (Number(packets) || 0) * product.piecesPerPacket +
       (Number(pieces) || 0);
 
-    // Format expiry date as yyyy-MM-dd string
     const expiryDateString = this.formatDateToString(new Date(expiryDate));
+    const currentUserId = this.auth.currentUser?.uid;
+
+    if (!currentUserId) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'User not authenticated'
+      });
+      return;
+    }
 
     const payload: ReturnItem = {
       id: this.editingReturnId ?? Date.now().toString(),
+      ...(this.tripId && { tripId: this.tripId }),
       ...(customer ? { customer } : { customerName: 'Other' }),
       product,
       quantity,
       reason,
       returnDate: new Date(),
       expiryDate: new Date(expiryDate),
-      createdBy: this.currentUserId
+      createdBy: currentUserId
     };
 
     this.isSavingReturn = true;
@@ -252,34 +328,47 @@ export class ReturnsComponent implements OnInit {
         await this.returnsService.createReturn(payload);
         this.returns.push(payload);
 
-        // restore stock if reason is unsold meaning the product can still be resold
+        // Handle stock restoration based on context
         if (reason === 'UNSOLD') {
-          try {
-            await this.stockService.increaseStock(
-              product.id,
-              quantity,
-              expiryDateString,
-              product
-            );
-
+          if (this.tripId) {
+            // Trip context: Stock tracked in trip allocation (dashboard calculation handles it)
             this.messageService.add({
               severity: 'success',
               summary: 'Created',
-              detail: 'Return created and stock restored successfully.'
+              detail: 'Return created successfully. Stock returned to your allocation.'
             });
-          } catch (stockError: any) {
-            console.error('Error restoring stock:', stockError);
-            this.messageService.add({
-              severity: 'warn',
-              summary: 'Partial Success',
-              detail: 'Return created but failed to restore stock. Please check stock manually.'
-            });
+          } else {
+            // Non-trip context CONTEXT: Restore to general warehouse stock
+            try {
+              await this.stockService.increaseStock(
+                product.id,
+                quantity,
+                expiryDateString,
+                product
+              );
+
+              this.messageService.add({
+                severity: 'success',
+                summary: 'Created',
+                detail: 'Return created and stock restored to warehouse.'
+              });
+            } catch (stockError: any) {
+              console.error('Error restoring stock:', stockError);
+              this.messageService.add({
+                severity: 'warn',
+                summary: 'Partial Success',
+                detail: 'Return created but failed to restore stock. Please check stock manually.'
+              });
+            }
           }
         } else {
+          // DAMAGED/EXPIRED/SPOILT: Replacement given (for trip) or just recorded (non-trip)
           this.messageService.add({
             severity: 'success',
             summary: 'Created',
-            detail: `Return created successfully (${reason} - not added to stock).`
+            detail: this.tripId
+              ? `Return created successfully (${reason} - replacement given from stock).`
+              : `Return created successfully (${reason} - not added to stock).`
           });
         }
       }
@@ -332,7 +421,7 @@ export class ReturnsComponent implements OnInit {
       await this.returnsService.deleteReturn(item.id);
       this.returns = this.returns.filter(r => r.id !== item.id);
 
-      // If the return was UNSOLD, we need to remove it from stock again
+      // If the return was UNSOLD, remove it from stock again
       if (item.reason === 'UNSOLD') {
         try {
           const expiryDateString = this.formatDateToString(this.toDate(item.expiryDate));

@@ -17,7 +17,7 @@ import {
   where,
   writeBatch,
 } from '@angular/fire/firestore';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { Invitation } from '../models/invitation';
 import { RoleName } from '../models/role-name';
 import { User } from '../models/user';
@@ -122,5 +122,59 @@ export class UserService {
 
   return collectionData(q, { idField: 'uid' }) as Observable<User[]>;
 }
+
+  getCurrentUserRoles(): Observable<{
+    isAdmin: boolean;
+    isManager: boolean;
+    isRider: boolean;
+    isCook: boolean;
+    role: RoleName | undefined;
+  }> {
+    return this.getCurrentUser().pipe(
+      map(user => ({
+        isAdmin: user?.role === 'ADMIN',
+        isManager: user?.role === 'MANAGER',
+        isRider: user?.role === 'RIDER',
+        isCook: user?.role === 'COOK',
+        role: user?.role
+      }))
+    );
+  }
+
+    /**
+   * Check if current user is Admin
+   */
+  isAdmin(): Observable<boolean> {
+    return this.getCurrentUser().pipe(
+      map(user => user?.role === 'ADMIN')
+    );
+  }
+
+  /**
+   * Check if current user is Manager
+   */
+  isManager(): Observable<boolean> {
+    return this.getCurrentUser().pipe(
+      map(user => user?.role === 'MANAGER')
+    );
+  }
+
+  /**
+   * Check if current user is Rider
+   */
+  isRider(): Observable<boolean> {
+    return this.getCurrentUser().pipe(
+      map(user => user?.role === 'RIDER')
+    );
+  }
+
+  /**
+   * Check if current user is Cook
+   */
+  isCook(): Observable<boolean> {
+    return this.getCurrentUser().pipe(
+      map(user => user?.role === 'COOK')
+    );
+  }
 
 }

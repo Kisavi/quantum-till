@@ -17,6 +17,9 @@ import { ProductService } from '../../../../core/services/product.service';
 import { Auth } from '@angular/fire/auth';
 import { StockService } from '../../../../core/services/stock.service';
 import { LoaderSkeletonComponent } from '../../../../core/shared/loader-skeleton/loader-skeleton.component';
+import { doc, getDoc } from '@angular/fire/firestore';
+import { firstValueFrom } from 'rxjs';
+import { UserService } from '../../../../core/services/user.service';
 
 @Component({
   selector: 'app-trip-stock-allocation',
@@ -61,7 +64,7 @@ export class TripStockAllocationComponent implements OnInit {
   private productService = inject(ProductService);
   private messageService = inject(MessageService);
   private confirmationService = inject(ConfirmationService);
-  private auth = inject(Auth);
+  private userService = inject(UserService);
   private stockService = inject(StockService);
 
   get totalQuantity(): number {
@@ -275,8 +278,10 @@ export class TripStockAllocationComponent implements OnInit {
   async submitBulkAllocation(): Promise<void> {
     if (!this.selectedTrip || this.selectedProductsCount === 0) return;
 
-    const currentUserId = this.auth.currentUser?.uid;
-    if (!currentUserId) {
+  const currentUser = await firstValueFrom(this.userService.getCurrentUser());
+    
+    console.log(currentUser)
+    if (!currentUser) {
       this.messageService.add({
         severity: 'error',
         summary: 'Error',
@@ -307,7 +312,7 @@ export class TripStockAllocationComponent implements OnInit {
               tripId: this.selectedTrip!.id!,
               product,
               quantity,
-              allocatedBy: currentUserId,
+              allocatedBy: currentUser,
               allocatedAt: new Date(),
               sourceStockExpiry: ''
             });
@@ -480,39 +485,23 @@ export class TripStockAllocationComponent implements OnInit {
     return Math.round(total * 100) / 100;
   }
 
+
   getAllocationTotalValue(allocation: TripStockAllocation): number {
     const product = allocation.product;
     const quantity = allocation.quantity;
 
-    if (product.piecesPerPacket <= 1) {
-      // no pieces
-      return quantity * product.unitPrice;
-    }
+    // Calculate price per piece
+    const pricePerPiece = product.unitPrice / product.piecesPerPacket;
 
-    // Calculate packets and pieces
-    const packets = Math.floor(quantity / product.piecesPerPacket);
-    const pieces = quantity % product.piecesPerPacket;
-
-    let totalValue = 0;
-
-    // Full packets value
-    totalValue += packets * product.unitPrice;
-
-    // Pieces value
-    if (pieces > 0) {
-      const pricePerPiece = product.unitPrice / product.piecesPerPacket;
-      totalValue += pieces * pricePerPiece;
-    }
-
-    return Math.round(totalValue * 100) / 100;
+    // Total value = quantity (in pieces) * price per piece
+    return Math.round(quantity * pricePerPiece * 100) / 100;
   }
 
+
   get totalValue(): number {
-    let total = 0;
-    this.allocations.forEach(allocation => {
-      total += this.getAllocationTotalValue(allocation);
-    });
-    return Math.round(total * 100) / 100;
+    return this.allocations.reduce((sum, allocation) => {
+      return sum + this.getAllocationTotalValue(allocation);
+    }, 0);
   }
 
   formatQuantityDisplay(quantity: number, product: Product): string {

@@ -192,12 +192,11 @@
           <label for="role" class="text-sm font-medium text-gray-700">Role *</label>
           <p-select 
             id="role" 
-            [options]="roleOptions" 
+            [options]="roles" 
             formControlName="role" 
-            optionLabel="label" 
-            optionValue="value" 
             placeholder="Select Role" 
             class="w-full"
+            required
             [ngClass]="{'p-invalid': isInvalid('role')}" />
           @if (isInvalid('role')) {
             <p-message severity="error" size="small" variant="simple">Role is required.</p-message>
@@ -207,10 +206,10 @@
           <label for="carAssigned" class="text-sm font-medium text-gray-700">Car Assigned *</label>
           <p-select 
             id="carAssigned" 
-            [options]="carOptions" 
+            [options]="vehicles" 
             formControlName="carAssigned" 
-            optionLabel="label" 
-            optionValue="value" 
+            optionLabel="regNo" 
+            optionValue="id" 
             placeholder="Select Car" 
             class="w-full"
             [ngClass]="{'p-invalid': isInvalid('carAssigned')}" />
@@ -222,10 +221,10 @@
           <label for="routesAssigned" class="text-sm font-medium text-gray-700">Routes Assigned *</label>
           <p-multiSelect 
             id="routesAssigned" 
-            [options]="routeOptions" 
+            [options]="routes" 
             formControlName="routesAssigned" 
-            optionLabel="label" 
-            optionValue="value" 
+            optionLabel="name" 
+            optionValue="id" 
             placeholder="Select Routes" 
             class="w-full"
             [ngClass]="{'p-invalid': isInvalid('routesAssigned')}" />

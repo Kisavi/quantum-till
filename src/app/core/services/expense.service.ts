@@ -6,7 +6,10 @@ import {
   doc, 
   setDoc, 
   updateDoc, 
-  deleteDoc 
+  deleteDoc, 
+  query,
+  orderBy,
+  where
 } from '@angular/fire/firestore';
 import { 
   Storage, 
@@ -34,7 +37,33 @@ export class ExpenseService {
 
   // Get all expenses
   getExpenses(): Observable<Expense[]> {
-    return collectionData(this.expensesCol, { idField: 'id' }) as Observable<Expense[]>;
+    const q = query(
+      this.expensesCol,
+      orderBy('createdAt', 'desc')
+    )
+    return collectionData(q, { idField: 'id' }) as Observable<Expense[]>;
+  }
+
+   //  get expenses by user (for riders to see only their expenses)
+  getExpensesByUser(userId: string): Observable<Expense[]> {
+    const q = query(
+      this.expensesCol,
+      where('userId', '==', userId),
+      orderBy('createdAt', 'desc'),
+      
+    );
+    return collectionData(q, { idField: 'id' }) as Observable<Expense[]>;
+  }
+
+  // get trip specific expenses
+  getExpensesByTrip(tripId: string): Observable<Expense[]> {
+    const q = query(
+      this.expensesCol,
+      where('tripId', '==', tripId),
+      orderBy('createdAt', 'desc'),
+      
+    );
+    return collectionData(q, { idField: 'id' }) as Observable<Expense[]>;
   }
 
   // Add expense

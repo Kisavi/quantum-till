@@ -3,8 +3,9 @@ import { Product } from './product';
 
 export interface ReturnItem {
   id: string;
+  tripId?: string;
   customer?: Customer;
-  customerName?: string; 
+  customerName?: string;
   product: Product;
   quantity: number;
   reason: ReturnReason;

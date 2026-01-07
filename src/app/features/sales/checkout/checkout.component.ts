@@ -34,6 +34,7 @@ export class CheckoutComponent {
   subTotal = this.cartService.subTotal;
 
   printReceipt = false;
+  tripId = input<string | null>(null);
 
   checkoutForm = new FormGroup({
     paymentMethod: new FormControl('CASH'),
@@ -58,6 +59,7 @@ export class CheckoutComponent {
         items,
         this.subTotal(),
         status,
+        this.tripId()
       );
 
       this.messageService.add({
@@ -65,7 +67,7 @@ export class CheckoutComponent {
         summary: 'Success',
         detail: 'Sale recorded',
       });
-
+      this.cartService.clearCart();
       this.closeDialog();
     } catch (e) {
       this.messageService.add({
