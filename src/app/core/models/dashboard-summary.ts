@@ -1,4 +1,3 @@
-// core/models/dashboard-summary.ts
 
 import { Product } from "./product";
 import { TripStatus } from "./trip";
@@ -23,36 +22,56 @@ export interface DistributorTripSummary {
     vehicleRegNo: string;
     tripStatus: TripStatus;
     productSummaries: ProductStockSummary[];
+    
+    // Stock quantities
     totalAllocated: number;
     totalSold: number;
     totalReturned: number;
     remainingStock: number;
+    
+    // Sales values
     grossSales: number;
     returnsValue: number;
     netSales: number;
+    
+    // Expenses 
     companyExpenses: number;
     personalExpenses: number;
+    totalExpenses: number;
     pendingCompanyExpenses: number;
     pendingPersonalExpenses: number;
-    netSalesAfterCompanyExpenses: number;
+    
+    // Commission
     commissionRate: number;
     commissionEarned: number;
-    commissionAfterPersonalExpenses: number;
-    amountToSubmit: number;
-    distributorTakesHome: number;
-    creditBalance: number;
+    commissionAfterPersonalExpenses: number; 
 
+    // Daily Settlement
+    expectedDailySubmission: number; // Gross Sales minus all expenses
+    actualMoneyCollected: number; // Cash + M-Pesa (after expense deductions)
+    dailyVariance: number; // Actual - Expected (positive = excess, negative = shortage)
+    
+    // Final Amount Distributor Gets/Owes
+    finalDistributorAmount: number; // Commission - Personal Expenses ± Daily Variance
+    
+    // Payment method breakdown
     mpesaTotal: number;
     cashReceived: number;
     mpesaDepositReceived: number;
     tillNumberReceived: number;
     sendMoneyReceived: number;
-
+    cashExpenses: number;
+    mpesaExpenses: number;
+    
+    // Physical money rider has
+    physicalCashBalance: number; 
+    physicalMpesaBalance: number; 
+    totalPhysicalMoney: number; 
+    
+    // Stock values
     initialStockValue: number;
     remainingStockValue: number;
     stockSoldPercentage: number;
-    cashExpenses: number;
-    mpesaExpenses: number;
 }
 
 export interface AdminDailySummary {
@@ -64,10 +83,9 @@ export interface AdminDailySummary {
     totalCompanyExpenses: number;
     totalPersonalExpenses: number;
     totalCommissionEarned: number;
-    totalCommissionAfterPersonalExpenses: number;
-    totalAmountToCollect: number;
-    totalDistributorEarnings: number;
-    totalCreditOwed: number;
-    totalDebtOwed: number;
+    totalExpectedSubmissions: number;
+    totalActualCollections: number;
+    totalDailyVariance: number;
+    totalFinalDistributorPayments: number;
     distributorSummaries: DistributorTripSummary[];
 }

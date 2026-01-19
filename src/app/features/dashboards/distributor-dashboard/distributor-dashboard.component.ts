@@ -1,5 +1,3 @@
-// features/distributor/distributor-dashboard/distributor-dashboard.component.ts
-
 import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -9,8 +7,8 @@ import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { SkeletonModule } from 'primeng/skeleton';
+import { AccordionModule } from 'primeng/accordion';
 import { Subscription, combineLatest } from 'rxjs';
-
 import { DistributorDashboardService } from '../../../core/services/distributor-dashboard.service';
 import { TripAllocationService } from '../../../core/services/trip-allocation.service';
 import { TripService } from '../../../core/services/trip.service';
@@ -37,11 +35,11 @@ import { TimestampMillisPipe } from '../../../core/pipes/timestamp-millis.pipe';
     TagModule,
     SkeletonModule,
     LoaderSkeletonComponent,
-    TimestampMillisPipe
+    TimestampMillisPipe,
+    AccordionModule
   ],
   templateUrl: './distributor-dashboard.component.html'
 })
-
 export class DistributorDashboardComponent implements OnInit, OnDestroy {
   private dashboardService = inject(DistributorDashboardService);
   private allocationService = inject(TripAllocationService);
@@ -57,6 +55,10 @@ export class DistributorDashboardComponent implements OnInit, OnDestroy {
   summary: DistributorTripSummary | null = null;
   currentTrip: Trip | null = null;
   selectedTrip: Trip | null = null;
+
+  // Expense lists for display
+  personalExpensesList: Expense[] = [];
+  companyExpensesList: Expense[] = [];
 
   isLoadingTrip = false;
   isLoadingAllocations = false;
@@ -171,6 +173,21 @@ export class DistributorDashboardComponent implements OnInit, OnDestroy {
           return;
         }
 
+        // Separate expenses by type for display
+        const relevantExpenses = expenses.filter(e =>
+          e.status === 'APPROVED' || e.status === 'PENDING'
+        );
+
+        this.personalExpensesList = relevantExpenses.filter(e => {
+          const expenseType = e.expenseType || getExpenseType(e.reason);
+          return expenseType === 'PERSONAL';
+        });
+
+        this.companyExpensesList = relevantExpenses.filter(e => {
+          const expenseType = e.expenseType || getExpenseType(e.reason);
+          return expenseType === 'COMPANY';
+        });
+
         this.summary = this.calculateSummary(
           this.currentTrip,
           allocations,
@@ -199,207 +216,215 @@ export class DistributorDashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-private calculateProductSummaries(
-  allocations: TripStockAllocation[],
-  sales: Sale[],
-  returns: ReturnItem[]
-): ProductStockSummary[] {
-  const productMap = new Map<string, ProductStockSummary>();
+  private calculateProductSummaries(
+    allocations: TripStockAllocation[],
+    sales: Sale[],
+    returns: ReturnItem[]
+  ): ProductStockSummary[] {
+    const productMap = new Map<string, ProductStockSummary>();
 
-  allocations.forEach(allocation => {
-    const pricePerPiece = allocation.product.unitPrice / allocation.product.piecesPerPacket;
-    const initialValue = allocation.quantity * pricePerPiece;
+    allocations.forEach(allocation => {
+      const pricePerPiece = allocation.product.unitPrice / allocation.product.piecesPerPacket;
+      const initialValue = allocation.quantity * pricePerPiece;
 
-    productMap.set(allocation.product.id, {
-      product: allocation.product,
-      allocated: allocation.quantity,
-      sold: 0,
-      returned: 0,
-      remaining: allocation.quantity,
-      salesValue: 0,
-      returnsValue: 0,
-      unsoldReturnsValue: 0,
-      remainingValue: initialValue 
+      productMap.set(allocation.product.id, {
+        product: allocation.product,
+        allocated: allocation.quantity,
+        sold: 0,
+        returned: 0,
+        remaining: allocation.quantity,
+        salesValue: 0,
+        returnsValue: 0,
+        unsoldReturnsValue: 0,
+        remainingValue: initialValue
+      });
     });
-  });
 
-  sales.forEach(sale => {
-    sale.items.forEach((item: CartItem) => {
-      const productId = item.stockItem.product.id;
-      const summary = productMap.get(productId);
+    sales.forEach(sale => {
+      sale.items.forEach((item: CartItem) => {
+        const productId = item.stockItem.product.id;
+        const summary = productMap.get(productId);
+
+        if (summary) {
+          summary.sold += item.quantity;
+          summary.remaining -= item.quantity;
+
+          const pricePerPiece = item.stockItem.product.unitPrice / item.stockItem.product.piecesPerPacket;
+          summary.salesValue += item.quantity * pricePerPiece;
+
+          summary.remainingValue = summary.remaining * pricePerPiece;
+        }
+      });
+    });
+
+    returns.forEach(returnItem => {
+      const summary = productMap.get(returnItem.product.id);
 
       if (summary) {
-        summary.sold += item.quantity;
-        summary.remaining -= item.quantity;
-        
-        const pricePerPiece = item.stockItem.product.unitPrice / item.stockItem.product.piecesPerPacket;
-        summary.salesValue += item.quantity * pricePerPiece;
-        
-        // Update remaining value
+        summary.returned += returnItem.quantity;
+
+        const pricePerPiece = returnItem.product.unitPrice / returnItem.product.piecesPerPacket;
+        const returnValue = returnItem.quantity * pricePerPiece;
+
+        summary.returnsValue += returnValue;
+
+        if (returnItem.reason === 'UNSOLD') {
+          summary.remaining += returnItem.quantity;
+          summary.unsoldReturnsValue += returnValue;
+        } else {
+          summary.remaining -= returnItem.quantity;
+        }
+
         summary.remainingValue = summary.remaining * pricePerPiece;
       }
     });
-  });
 
-  returns.forEach(returnItem => {
-    const summary = productMap.get(returnItem.product.id);
-
-    if (summary) {
-      summary.returned += returnItem.quantity;
-      
-      const pricePerPiece = returnItem.product.unitPrice / returnItem.product.piecesPerPacket;
-      const returnValue = returnItem.quantity * pricePerPiece;
-
-      summary.returnsValue += returnValue;
-
-      if (returnItem.reason === 'UNSOLD') {
-        summary.remaining += returnItem.quantity;
-        summary.unsoldReturnsValue += returnValue;
-      } else {
-        summary.remaining -= returnItem.quantity;
-      }
-      
-      // Update remaining value after returns
-      summary.remainingValue = summary.remaining * pricePerPiece;
-    }
-  });
-
-  return Array.from(productMap.values());
-}
-
-private calculateSummary(
-  trip: Trip,
-  allocations: TripStockAllocation[],
-  sales: Sale[],
-  returns: ReturnItem[],
-  expenses: Expense[]
-): DistributorTripSummary {
-  const completedSales = sales.filter(s => s.status === 'COMPLETED');
-  const productSummaries = this.calculateProductSummaries(allocations, completedSales, returns);
-
-  // Stock totals
-  const totalAllocated = productSummaries.reduce((sum, p) => sum + p.allocated, 0);
-  const totalSold = productSummaries.reduce((sum, p) => sum + p.sold, 0);
-  const totalReturned = productSummaries.reduce((sum, p) => sum + p.returned, 0);
-  const remainingStock = productSummaries.reduce((sum, p) => sum + p.remaining, 0);
-
-  // Money calculations
-  const grossSales = productSummaries.reduce((sum, p) => sum + p.salesValue, 0);
-  const returnsValue = productSummaries.reduce((sum, p) => sum + p.returnsValue, 0);
-  const unsoldReturnsValue = productSummaries.reduce((sum, p) => sum + p.unsoldReturnsValue, 0);
-  const netSales = grossSales - unsoldReturnsValue;
-
-  // Stock value calculations
-  const initialStockValue = productSummaries.reduce((sum, p) => {
-    const pricePerPiece = p.product.unitPrice / p.product.piecesPerPacket;
-    return sum + (p.allocated * pricePerPiece);
-  }, 0);
-
-  const remainingStockValue = productSummaries.reduce((sum, p) => sum + p.remainingValue, 0);
-  
-  const stockSoldPercentage = initialStockValue > 0 
-    ? Math.round((grossSales / initialStockValue) * 100) 
-    : 0;
-
-  // Payment method breakdown
-  const paymentBreakdown = this.calculatePaymentBreakdown(completedSales);
-
-  // Expense calculations - Include PENDING and APPROVED
-  const relevantExpenses = expenses.filter(e => 
-    e.status === 'APPROVED' || e.status === 'PENDING'
-  );
-
-  const companyExpenses = relevantExpenses.reduce((sum, e) => {
-    const expenseType = e.expenseType || getExpenseType(e.reason);
-    return expenseType === 'COMPANY' ? sum + e.amount : sum;
-  }, 0);
-
-  const personalExpenses = relevantExpenses.reduce((sum, e) => {
-    const expenseType = e.expenseType || getExpenseType(e.reason);
-    return expenseType === 'PERSONAL' ? sum + e.amount : sum;
-  }, 0);
-
-  // Separate pending expenses for display
-  const pendingExpenses = expenses.filter(e => e.status === 'PENDING');
-  
-  const pendingCompanyExpenses = pendingExpenses.reduce((sum, e) => {
-    const expenseType = e.expenseType || getExpenseType(e.reason);
-    return expenseType === 'COMPANY' ? sum + e.amount : sum;
-  }, 0);
-
-  const pendingPersonalExpenses = pendingExpenses.reduce((sum, e) => {
-    const expenseType = e.expenseType || getExpenseType(e.reason);
-    return expenseType === 'PERSONAL' ? sum + e.amount : sum;
-  }, 0);
-
-  const cashExpenses = relevantExpenses.reduce((sum, e) => {
-  return e.paymentMethod === 'CASH' ? sum + e.amount : sum;
-}, 0);
-
-const mpesaExpenses = relevantExpenses.reduce((sum, e) => {
-  return e.paymentMethod === 'MPESA' ? sum + e.amount : sum;
-}, 0);
-
-  // Commission calculations
-  const commissionRate = environment.commissionRate;
-  const commissionEarned = (netSales * commissionRate) / 100;
-  // Net sales after deducting commission
-  const netSalesAfterCommission = netSales - commissionEarned;
-  // Calculate distributor's take home (commission - personal expenses)
-  const distributorTakesHome = commissionEarned - personalExpenses;
-
-   let companyReceives = netSalesAfterCommission;
-  if (distributorTakesHome < 0) {
-    // Distributor overspent on personal - company compensates
-    const excess = Math.abs(distributorTakesHome);
-    companyReceives = netSalesAfterCommission + excess;
+    return Array.from(productMap.values());
   }
 
-    // Step 4: Deduct company expenses from what company receives
-  const amountToSubmit = companyReceives - companyExpenses;
+  private calculateSummary(
+    trip: Trip,
+    allocations: TripStockAllocation[],
+    sales: Sale[],
+    returns: ReturnItem[],
+    expenses: Expense[]
+  ): DistributorTripSummary {
+    const completedSales = sales.filter(s => s.status === 'COMPLETED');
+    const productSummaries = this.calculateProductSummaries(allocations, completedSales, returns);
 
-    // Calculate the display value for "Net After Expenses" - I need to seek more clarification bro because sometime's it's weekly
-  // This should be: Net Sales - Company Expenses (not including personal expense adjustments)
-  const netSalesAfterCompanyExpenses = netSales - companyExpenses;
+    // Stock totals
+    const totalAllocated = productSummaries.reduce((sum, p) => sum + p.allocated, 0);
+    const totalSold = productSummaries.reduce((sum, p) => sum + p.sold, 0);
+    const totalReturned = productSummaries.reduce((sum, p) => sum + p.returned, 0);
+    const remainingStock = productSummaries.reduce((sum, p) => sum + p.remaining, 0);
 
-  return {
-    tripId: trip.id!,
-    userId: this.userId!,
-    userName: trip.distributor?.displayName || 'Unknown',
-    routeName: trip.route?.name || 'Unknown Route',
-    vehicleRegNo: trip.vehicle?.regNo || 'Unknown Vehicle',
-    tripStatus: trip.status,
-    productSummaries,
-    totalAllocated: this.round(totalAllocated),
-    totalSold: this.round(totalSold),
-    totalReturned: this.round(totalReturned),
-    remainingStock: this.round(remainingStock),
-    grossSales: this.round(grossSales),
-    returnsValue: this.round(returnsValue),
-    netSales: this.round(netSales),
-    companyExpenses: this.round(companyExpenses),
-    personalExpenses: this.round(personalExpenses),
-    pendingCompanyExpenses: this.round(pendingCompanyExpenses),
-    pendingPersonalExpenses: this.round(pendingPersonalExpenses),
-    netSalesAfterCompanyExpenses: this.round(netSalesAfterCompanyExpenses),
-    commissionRate,
-    commissionEarned: this.round(commissionEarned),
-    commissionAfterPersonalExpenses: this.round(distributorTakesHome),
-    distributorTakesHome: this.round(distributorTakesHome),
-    amountToSubmit: this.round(amountToSubmit),
-    creditBalance: this.round(distributorTakesHome),
-    mpesaTotal: this.round(paymentBreakdown.mpesaTotal),
-    cashReceived: this.round(paymentBreakdown.cash),
-    mpesaDepositReceived: this.round(paymentBreakdown.mpesaDeposit),
-    tillNumberReceived: this.round(paymentBreakdown.tillNumber),
-    sendMoneyReceived: this.round(paymentBreakdown.sendMoney),
-    initialStockValue: this.round(initialStockValue),
-    remainingStockValue: this.round(remainingStockValue),
-    cashExpenses: this.round(cashExpenses),
-    mpesaExpenses: this.round(mpesaExpenses),
-    stockSoldPercentage
-  };
-}
+    // Money calculations
+    const grossSales = productSummaries.reduce((sum, p) => sum + p.salesValue, 0);
+    const returnsValue = productSummaries.reduce((sum, p) => sum + p.returnsValue, 0);
+    const unsoldReturnsValue = productSummaries.reduce((sum, p) => sum + p.unsoldReturnsValue, 0);
+    const netSales = grossSales - unsoldReturnsValue;
+
+    // Stock value calculations
+    const initialStockValue = productSummaries.reduce((sum, p) => {
+      const pricePerPiece = p.product.unitPrice / p.product.piecesPerPacket;
+      return sum + (p.allocated * pricePerPiece);
+    }, 0);
+
+    const remainingStockValue = productSummaries.reduce((sum, p) => sum + p.remainingValue, 0);
+
+    const stockSoldPercentage = initialStockValue > 0
+      ? Math.round((grossSales / initialStockValue) * 100)
+      : 0;
+
+    // Payment method breakdown
+    const paymentBreakdown = this.calculatePaymentBreakdown(completedSales);
+
+    // Expense calculations - Include PENDING and APPROVED
+    const relevantExpenses = expenses.filter(e =>
+      e.status === 'APPROVED' || e.status === 'PENDING'
+    );
+
+    const companyExpenses = relevantExpenses.reduce((sum, e) => {
+      const expenseType = e.expenseType || getExpenseType(e.reason);
+      return expenseType === 'COMPANY' ? sum + e.amount : sum;
+    }, 0);
+
+    const personalExpenses = relevantExpenses.reduce((sum, e) => {
+      const expenseType = e.expenseType || getExpenseType(e.reason);
+      return expenseType === 'PERSONAL' ? sum + e.amount : sum;
+    }, 0);
+
+    const totalExpenses = companyExpenses + personalExpenses;
+
+    // Separate pending expenses for display
+    const pendingExpenses = expenses.filter(e => e.status === 'PENDING');
+
+    const pendingCompanyExpenses = pendingExpenses.reduce((sum, e) => {
+      const expenseType = e.expenseType || getExpenseType(e.reason);
+      return expenseType === 'COMPANY' ? sum + e.amount : sum;
+    }, 0);
+
+    const pendingPersonalExpenses = pendingExpenses.reduce((sum, e) => {
+      const expenseType = e.expenseType || getExpenseType(e.reason);
+      return expenseType === 'PERSONAL' ? sum + e.amount : sum;
+    }, 0);
+
+    // Expenses by payment method
+    const cashExpenses = relevantExpenses.reduce((sum, e) => {
+      return e.paymentMethod === 'CASH' ? sum + e.amount : sum;
+    }, 0);
+
+    const mpesaExpenses = relevantExpenses.reduce((sum, e) => {
+      return e.paymentMethod === 'MPESA' ? sum + e.amount : sum;
+    }, 0);
+
+    // DAILY COMMISSION CALCULATION
+    const commissionRate = environment.commissionRate;
+    const commissionEarned = (grossSales * commissionRate) / 100;
+    const commissionAfterPersonalExpenses = commissionEarned - personalExpenses;
+
+    // DAILY SETTLEMENT CALCULATIONS
+    // Expected: Gross Sales - All Expenses (Company + Personal)
+    const expectedDailySubmission = grossSales - totalExpenses;
+
+    // Actual money collected from trip (0 if trip not ended)
+    const actualMoneyCollected = trip.actualCashSubmission || 0;
+
+    // Daily variance: positive = excess, negative = shortage
+    const dailyVariance = actualMoneyCollected - expectedDailySubmission;
+
+    // Physical money breakdown (for display only)
+    const physicalCashBalance = paymentBreakdown.cash - cashExpenses;
+    const physicalMpesaBalance = paymentBreakdown.mpesaTotal - mpesaExpenses;
+    const totalPhysicalMoney = physicalCashBalance + physicalMpesaBalance;
+
+    // FINAL AMOUNT DISTRIBUTOR GETS/OWES
+    // Formula: Commission - Personal Expenses ± Daily Variance
+    const finalDistributorAmount = commissionAfterPersonalExpenses + dailyVariance;
+
+    return {
+      tripId: trip.id!,
+      userId: this.userId!,
+      userName: trip.distributor?.displayName || 'Unknown',
+      routeName: trip.route?.name || 'Unknown Route',
+      vehicleRegNo: trip.vehicle?.regNo || 'Unknown Vehicle',
+      tripStatus: trip.status,
+      productSummaries,
+      totalAllocated: this.round(totalAllocated),
+      totalSold: this.round(totalSold),
+      totalReturned: this.round(totalReturned),
+      remainingStock: this.round(remainingStock),
+      grossSales: this.round(grossSales),
+      returnsValue: this.round(returnsValue),
+      netSales: this.round(netSales),
+      companyExpenses: this.round(companyExpenses),
+      personalExpenses: this.round(personalExpenses),
+      totalExpenses: this.round(totalExpenses),
+      pendingCompanyExpenses: this.round(pendingCompanyExpenses),
+      pendingPersonalExpenses: this.round(pendingPersonalExpenses),
+      commissionRate,
+      commissionEarned: this.round(commissionEarned),
+      commissionAfterPersonalExpenses: this.round(commissionAfterPersonalExpenses),
+      expectedDailySubmission: this.round(expectedDailySubmission),
+      actualMoneyCollected: this.round(actualMoneyCollected),
+      dailyVariance: this.round(dailyVariance),
+      finalDistributorAmount: this.round(finalDistributorAmount),
+      mpesaTotal: this.round(paymentBreakdown.mpesaTotal),
+      cashReceived: this.round(paymentBreakdown.cash),
+      mpesaDepositReceived: this.round(paymentBreakdown.mpesaDeposit),
+      tillNumberReceived: this.round(paymentBreakdown.tillNumber),
+      sendMoneyReceived: this.round(paymentBreakdown.sendMoney),
+      physicalCashBalance: this.round(physicalCashBalance),
+      physicalMpesaBalance: this.round(physicalMpesaBalance),
+      totalPhysicalMoney: this.round(totalPhysicalMoney),
+      initialStockValue: this.round(initialStockValue),
+      remainingStockValue: this.round(remainingStockValue),
+      cashExpenses: this.round(cashExpenses),
+      mpesaExpenses: this.round(mpesaExpenses),
+      stockSoldPercentage
+    };
+  }
+
   private calculatePaymentBreakdown(sales: Sale[]): {
     cash: number;
     mpesaDeposit: number;
@@ -472,20 +497,28 @@ const mpesaExpenses = relevantExpenses.reduce((sum, e) => {
     }
   }
 
-  getCreditBalanceClass(balance: number): string {
-    if (balance > 0) return 'text-green-600';
-    if (balance < 0) return 'text-red-600';
+  getVarianceClass(variance: number): string {
+    if (variance > 0) return 'text-green-700';
+    if (variance < 0) return 'text-red-700';
+    return 'text-blue-700';
+  }
+
+  getVarianceLabel(variance: number): string {
+    if (variance > 0) return 'Excess Cash';
+    if (variance < 0) return 'Cash Shortage';
+    return 'Exact Amount';
+  }
+
+  getFinalAmountClass(amount: number): string {
+    if (amount > 0) return 'text-green-700';
+    if (amount < 0) return 'text-red-700';
     return 'text-gray-600';
   }
 
-  getCreditBalanceLabel(balance: number): string {
-    if (balance > 0) return 'You earn';
-    if (balance < 0) return 'You owe';
-    return 'Balanced';
-  }
-
-  formatCurrency(value: number): string {
-    return `KES ${value.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  getFinalAmountLabel(amount: number): string {
+    if (amount > 0) return 'Distributor Receives';
+    if (amount < 0) return 'Distributor Owes Company';
+    return 'Break Even';
   }
 
   formatQuantity(quantity: number, product: any): string {

@@ -27,7 +27,7 @@ export class TripService {
     orderBy('createdOn', 'desc')
   );
 
-  return collectionData(this.tripsRef, { idField: 'id' }) as Observable<Trip[]>;
+  return collectionData(q, { idField: 'id' }) as Observable<Trip[]>;
 }
 
   createTrip(trip: CreateTripDto) {

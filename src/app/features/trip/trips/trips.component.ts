@@ -105,6 +105,7 @@ export class TripsComponent implements OnInit {
 
     this.endForm = this.fb.group({
       endOdometerReading: [null, [Validators.required, Validators.min(1)]],
+      actualCashSubmission: [null, [Validators.required, Validators.min(0)]],
     });
   }
 
@@ -302,7 +303,8 @@ export class TripsComponent implements OnInit {
     if (trip.status !== 'ONGOING') return;
     this.selectedTrip = trip;
     this.endForm.patchValue({
-      endOdometerReading: null
+      endOdometerReading: null,
+      actualCashSubmission: null
     });
     this.visibleEndDialog = true;
   }
@@ -310,8 +312,8 @@ export class TripsComponent implements OnInit {
   async endTrip(): Promise<void> {
     if (!this.selectedTrip || this.endForm.invalid) return;
 
-    const endReading = this.endForm.value.endOdometerReading;
-    if (!endReading || endReading <= this.selectedTrip.startOdometerReading) {
+    const { endOdometerReading, actualCashSubmission } = this.endForm.value;
+    if (!endOdometerReading || endOdometerReading <= this.selectedTrip.startOdometerReading) {
       this.messageService.add({
         severity: 'error',
         summary: 'Invalid Odometer',
@@ -324,18 +326,19 @@ export class TripsComponent implements OnInit {
 
     try {
       const endTime = new Date();
-      const totalKm = endReading - this.selectedTrip.startOdometerReading;
+      const totalKm = endOdometerReading - this.selectedTrip.startOdometerReading;
       const durationMinutes = Math.round(
         (endTime.getTime() - new Date(this.selectedTrip.startTime).getTime()) / 60000
       );
 
       // 1. Update trip status
       await this.tripService.updateTrip(this.selectedTrip.id!, {
-        endOdometerReading: endReading,
+        endOdometerReading,
         endTime,
         totalKm,
         durationMinutes,
-        status: 'ENDED'
+        status: 'ENDED',
+        actualCashSubmission
       });
 
       // 2. Calculate remaining stock and return to warehouse
@@ -352,8 +355,9 @@ export class TripsComponent implements OnInit {
       });
 
       this.visibleEndDialog = false;
+      this.selectedTrip = null;
+      this.endForm.reset();
     } catch (error: any) {
-      console.error('Error ending trip:', error);
       this.messageService.add({
         severity: 'error',
         summary: 'Error',

@@ -1,16 +1,20 @@
-<!-- Trip Selection View -->
 <div *ngIf="showTripSelection" class="min-h-screen bg-gray-50 pb-6">
   <!-- Header -->
-  <div class="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-4 md:p-6 shadow-lg">
-    <div class="max-w-7xl mx-auto">
-      <h1 class="text-2xl md:text-3xl font-bold mb-2">My Trips</h1>
-      <p class="text-blue-100 text-sm md:text-base">Select a trip to view dashboard</p>
-    </div>
+ <div class="bg-slate-100 border-b-2 border-slate-200 p-4 md:p-6 shadow-sm">
+  <div>
+    <h1 class="text-xl md:text-2xl font-bold text-slate-800 tracking-tight mb-1">
+      My Trips
+    </h1>
+    
+    <p class="text-slate-600 text-sm md:text-base font-medium">
+      Select a trip to view the dashboard
+    </p>
   </div>
+</div>
 
-  <div class="max-w-7xl mx-auto px-4 py-6">
+  <div class="py-6">
     <!-- Loading State -->
-    <div *ngIf="isLoadingTrips" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div *ngIf="isLoadingTrips" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <app-loader-skeleton *ngFor="let _ of [].constructor(3)"></app-loader-skeleton>
     </div>
 
@@ -24,7 +28,7 @@
     </p-card>
 
     <!-- Trip Cards -->
-    <div *ngIf="!isLoadingTrips && !hasError" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div *ngIf="!isLoadingTrips && !hasError" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <p-card *ngFor="let trip of userTrips" class="shadow-sm hover:shadow-md transition-shadow">
         <div class="space-y-3">
           <!-- Status Badge -->
@@ -76,33 +80,41 @@
 
 <!-- Dashboard View -->
 <div *ngIf="!showTripSelection" class="min-h-screen bg-gray-50 pb-6">
-  <!-- Header Section -->
-  <div class="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-4 md:p-6 shadow-lg">
-    <div class="max-w-7xl mx-auto">
-      <!-- Back Button -->
-      <p-button icon="pi pi-arrow-left" [text]="true" severity="secondary" (onClick)="backToTripSelection()"
-        class="mb-3 text-white">
-      </p-button>
 
-      <!-- Loading State -->
-      <ng-container *ngIf="isLoadingTrip">
-        <app-loader-skeleton></app-loader-skeleton>
-      </ng-container>
 
-      <!-- Loaded State -->
-      <ng-container *ngIf="!isLoadingTrip && summary">
-        <div class="flex items-center justify-between mb-2">
-          <h1 class="text-2xl md:text-3xl font-bold">Dashboard</h1>
-          <span [ngClass]="getStatusClass(summary.tripStatus)" class="px-3 py-1 rounded-full text-xs font-semibold">
-            {{ summary.tripStatus }}
-          </span>
-        </div>
-        <p class="text-blue-100 text-sm md:text-base">
-          {{ summary.userName }} • {{ summary.routeName }} • {{ summary.vehicleRegNo }}
-        </p>
-      </ng-container>
-    </div>
+  <div class="bg-slate-100 border-b border-slate-200 p-4 md:p-6 shadow-sm">
+  <div class="max-w-7xl mx-auto">
+    
+    <button (click)="backToTripSelection()" 
+            class="flex items-center gap-2 mb-3 text-slate-500 hover:text-blue-600 transition-colors text-sm font-medium">
+      <i class="pi pi-arrow-left"></i>
+      <span>Back</span>
+    </button>
+
+    <ng-container *ngIf="isLoadingTrip">
+      <app-loader-skeleton></app-loader-skeleton>
+    </ng-container>
+
+    <ng-container *ngIf="!isLoadingTrip && summary">
+      <div class="flex items-center justify-between mb-1">
+        <h1 class="text-xl md:text-2xl font-bold text-slate-800">Trip Dashboard</h1>
+        
+        <span [ngClass]="getStatusClass(summary.tripStatus)" 
+              class="px-3 py-1 rounded-full text-sm font-bold bg-blue-50 text-blue-700 border border-blue-100 uppercase">
+          {{ summary.tripStatus }}
+        </span>
+      </div>
+      
+      <p class="text-slate-500 text-sm flex items-center gap-2">
+        <span class="font-semibold text-slate-700">{{ summary.userName }}</span> 
+        <span class="text-slate-600">|</span>
+        <span>{{ summary.routeName }}</span> 
+        <span class="text-slate-600">|</span>
+        <span class="text-blue-600 font-medium">{{ summary.vehicleRegNo }}</span>
+      </p>
+    </ng-container>
   </div>
+</div>
 
   <!-- Error State -->
   <div *ngIf="hasError && !isLoading" class="max-w-7xl mx-auto px-4 py-8">
@@ -139,88 +151,96 @@
       </div>
     </div>
 
-
-
     <!-- Summary Cards -->
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
-      <!-- Initial Stock Value -->
-      <p-card class="shadow-sm bg-blue-50">
-        <ng-container *ngIf="isLoading">
-          <app-loader-skeleton></app-loader-skeleton>
-        </ng-container>
-        <ng-container *ngIf="!isLoading && summary">
-          <div class="text-xs md:text-sm text-gray-600 font-medium mb-1 whitespace-nowrap">Initial Value</div>
-          <div class="text-lg md:text-xl font-bold text-blue-700 whitespace-nowrap">
-            {{ summary.initialStockValue | currency:'KES ':'symbol':'1.0-0' }}
-          </div>
-          <div class="text-xs text-gray-500 mt-1">allocated</div>
-        </ng-container>
-      </p-card>
-
-      <!-- Net Sales -->
-      <p-card class="shadow-sm">
-        <ng-container *ngIf="isLoadingSales">
-          <app-loader-skeleton></app-loader-skeleton>
-        </ng-container>
-        <ng-container *ngIf="!isLoadingSales && summary">
-          <div class="text-xs md:text-sm text-gray-600 font-medium mb-1 whitespace-nowrap">Net Sales</div>
-          <div class="text-lg md:text-xl font-bold text-green-600 whitespace-nowrap">
-            {{ summary.netSales | currency:'KES ':'symbol':'1.0-0' }}
-          </div>
-          <div class="text-xs text-gray-500 mt-1">sold</div>
-        </ng-container>
-      </p-card>
-
-      <!-- Remaining Stock Value -->
-      <p-card class="shadow-sm bg-purple-50">
-        <ng-container *ngIf="isLoading">
-          <app-loader-skeleton></app-loader-skeleton>
-        </ng-container>
-        <ng-container *ngIf="!isLoading && summary">
-          <div class="text-xs md:text-sm text-gray-600 font-medium mb-1 whitespace-nowrap">Remaining Value</div>
-          <div class="text-lg md:text-xl font-bold text-purple-700 whitespace-nowrap">
-            {{ summary.remainingStockValue | currency:'KES ':'symbol':'1.0-0' }}
-          </div>
-          <div class="text-xs text-gray-500 mt-1">to return</div>
-        </ng-container>
-      </p-card>
-
-      <!-- Commission -->
-      <p-card class="shadow-sm">
-        <ng-container *ngIf="isLoadingAllocations">
-          <app-loader-skeleton></app-loader-skeleton>
-        </ng-container>
-        <ng-container *ngIf="!isLoadingAllocations && summary">
-          <div class="text-xs md:text-sm text-gray-600 font-medium mb-1 whitespace-nowrap">Commission</div>
-          <div class="text-lg md:text-xl font-bold text-blue-600 whitespace-nowrap">
-            {{ summary.commissionEarned | currency:'KES ':'symbol':'1.0-0' }}
-          </div>
-          <div class="text-xs text-gray-500 mt-1">earned</div>
-        </ng-container>
-      </p-card>
-
-      <!-- Personal Expenses -->
-      <p-card class="shadow-sm">
-        <ng-container *ngIf="isLoadingReturns">
-          <app-loader-skeleton></app-loader-skeleton>
-        </ng-container>
-        <ng-container *ngIf="!isLoadingReturns && summary">
-          <div class="text-xs md:text-sm text-gray-600 font-medium mb-1 whitespace-nowrap">Personal Expenses</div>
-          <div class="text-lg md:text-xl font-bold text-orange-600 whitespace-nowrap">
-            {{ summary.personalExpenses | currency:'KES ':'symbol':'1.0-0' }}
-          </div>
-          <div class="text-xs text-gray-500 mt-1">incurred</div>
-        </ng-container>
-      </p-card>
-
-      <!-- Stock Sold Percentage -->
+      <!-- Gross Sales -->
       <p-card class="shadow-sm bg-green-50">
         <ng-container *ngIf="isLoading">
           <app-loader-skeleton></app-loader-skeleton>
         </ng-container>
         <ng-container *ngIf="!isLoading && summary">
+          <div class="text-xs md:text-sm text-gray-600 font-medium mb-1 whitespace-nowrap">Gross Sales</div>
+          <div class="text-lg md:text-xl font-bold text-green-700 whitespace-nowrap">
+            {{ summary.grossSales | currency:'KES ':'symbol':'1.0-0' }}
+          </div>
+          <div class="text-xs text-gray-500 mt-1">total collected</div>
+        </ng-container>
+      </p-card>
+
+      <!-- Commission Earned after Personal Expenses -->
+      <p-card class="shadow-sm"
+        [ngClass]="summary && summary.commissionAfterPersonalExpenses >= 0 ? 'bg-blue-50' : 'bg-red-50'">
+        <ng-container *ngIf="isLoading">
+          <app-loader-skeleton></app-loader-skeleton>
+        </ng-container>
+        <ng-container *ngIf="!isLoading && summary">
+          <div class="text-xs md:text-sm text-gray-600 font-medium mb-1 whitespace-nowrap">
+            Commission ({{ summary.commissionRate }}%)
+          </div>
+          <div class="text-lg md:text-xl font-bold whitespace-nowrap"
+            [ngClass]="summary.commissionAfterPersonalExpenses >= 0 ? 'text-blue-700' : 'text-red-700'">
+            {{ (summary.actualMoneyCollected === 0 ? summary.commissionAfterPersonalExpenses :
+            summary.finalDistributorAmount) | currency:'KES':'symbol':'1.2-2' }}
+          </div>
+          <div class="text-xs mt-1"
+            [ngClass]="summary.commissionAfterPersonalExpenses >= 0 ? 'text-gray-500' : 'text-red-600'">
+            <span *ngIf="summary.commissionAfterPersonalExpenses === 0">break even</span>
+            <span *ngIf="summary.commissionAfterPersonalExpenses >= 0">net commission</span>
+            <span *ngIf="summary.commissionAfterPersonalExpenses < 0">owes company</span>
+          </div>
+        </ng-container>
+      </p-card>
+
+      <!-- Total Expenses -->
+      <p-card class="shadow-sm bg-orange-50">
+        <ng-container *ngIf="isLoading">
+          <app-loader-skeleton></app-loader-skeleton>
+        </ng-container>
+        <ng-container *ngIf="!isLoading && summary">
+          <div class="text-xs md:text-sm text-gray-600 font-medium mb-1 whitespace-nowrap">Total Expenses</div>
+          <div class="text-lg md:text-xl font-bold text-orange-700 whitespace-nowrap">
+            {{ summary.totalExpenses | currency:'KES ':'symbol':'1.0-0' }}
+          </div>
+          <div class="text-xs text-gray-500 mt-1">company + personal</div>
+        </ng-container>
+      </p-card>
+
+      <!-- Expected Submission -->
+      <p-card class="shadow-sm bg-purple-50">
+        <ng-container *ngIf="isLoading">
+          <app-loader-skeleton></app-loader-skeleton>
+        </ng-container>
+        <ng-container *ngIf="!isLoading && summary">
+          <div class="text-xs md:text-sm text-gray-600 font-medium mb-1 whitespace-nowrap">Expected Cash</div>
+          <div class="text-lg md:text-xl font-bold text-purple-700 whitespace-nowrap">
+            {{ summary.expectedDailySubmission | currency:'KES ':'symbol':'1.0-0' }}
+          </div>
+          <div class="text-xs text-gray-500 mt-1">should have</div>
+        </ng-container>
+      </p-card>
+
+      <!-- Actual Money -->
+      <p-card class="shadow-sm bg-indigo-50">
+        <ng-container *ngIf="isLoading">
+          <app-loader-skeleton></app-loader-skeleton>
+        </ng-container>
+        <ng-container *ngIf="!isLoading && summary">
+          <div class="text-xs md:text-sm text-gray-600 font-medium mb-1 whitespace-nowrap">Actual Money</div>
+          <div class="text-lg md:text-xl font-bold text-indigo-700 whitespace-nowrap">
+            {{ summary.actualMoneyCollected | currency:'KES ':'symbol':'1.0-0' }}
+          </div>
+          <div class="text-xs text-gray-500 mt-1">in hand</div>
+        </ng-container>
+      </p-card>
+
+      <!-- Stock Sold Percentage -->
+      <p-card class="shadow-sm bg-teal-50">
+        <ng-container *ngIf="isLoading">
+          <app-loader-skeleton></app-loader-skeleton>
+        </ng-container>
+        <ng-container *ngIf="!isLoading && summary">
           <div class="text-xs md:text-sm text-gray-600 font-medium mb-1 whitespace-nowrap">Stock Sold</div>
-          <div class="text-lg md:text-xl font-bold text-green-700 whitespace-nowrap">{{ summary.stockSoldPercentage }}%
+          <div class="text-lg md:text-xl font-bold text-teal-700 whitespace-nowrap">{{ summary.stockSoldPercentage }}%
           </div>
           <div class="text-xs text-gray-500 mt-1">of total</div>
         </ng-container>
@@ -274,7 +294,7 @@
           </ng-template>
           <ng-template pTemplate="emptymessage">
             <tr>
-              <td colspan="6" class="text-center py-8 text-gray-500">
+              <td colspan="8" class="text-center py-8 text-gray-500">
                 <i class="pi pi-inbox text-4xl mb-2"></i>
                 <p>No products allocated</p>
               </td>
@@ -321,11 +341,6 @@
               <span class="font-bold text-orange-600">{{ product.returnsValue | currency:'KES':'symbol':'1.2-2'
                 }}</span>
             </div>
-            <div class="flex justify-between items-center">
-              <span class="text-gray-600 text-sm">Remaining Value:</span>
-              <span class="font-bold text-purple-600">{{ product.remainingValue | currency:'KES':'symbol':'1.2-2'
-                }}</span>
-            </div>
           </div>
         </div>
 
@@ -341,6 +356,7 @@
       <ng-template pTemplate="header">
         <div class="p-4 border-b">
           <h2 class="text-lg md:text-xl font-bold text-gray-800">Financial Summary</h2>
+          <p class="text-sm text-gray-600 mt-1">Complete breakdown of today's transactions</p>
         </div>
       </ng-template>
 
@@ -349,167 +365,315 @@
         <app-loader-skeleton *ngFor="let _ of [].constructor(6)"></app-loader-skeleton>
       </div>
 
-      <!-- Loaded State -->
-      <div *ngIf="!isLoading && summary" class="p-4 space-y-3">
-        <!-- Sales Section -->
-        <div class="space-y-2">
+      <!-- Loaded State - Single Card with All Calculations -->
+      <div *ngIf="!isLoading && summary" class="p-4 md:p-6">
+        <div
+          class="bg-gradient-to-br from-blue-50 to-purple-50 p-4 md:p-6 rounded-lg border-2 border-blue-200 space-y-3">
+
+          <!-- Step 1: Gross Sales -->
           <div class="flex justify-between items-center py-2">
             <span class="text-gray-700 font-medium">Gross Sales</span>
-            <span class="font-semibold text-lg">{{ summary.grossSales | currency:'KES':'symbol':'1.2-2' }}</span>
-          </div>
-          <div class="flex justify-between items-center py-2 text-orange-600">
-            <span class="font-medium">Returns Value</span>
-            <span class="font-semibold">- {{ summary.returnsValue | currency:'KES':'symbol':'1.2-2' }}</span>
-          </div>
-          <div class="flex justify-between items-center py-2 border-t border-gray-200">
-            <span class="text-gray-700 font-semibold">Net Sales</span>
-            <span class="font-bold text-lg text-green-600">{{ summary.netSales | currency:'KES':'symbol':'1.2-2'
+            <span class="font-bold text-lg text-gray-900">{{ summary.grossSales | currency:'KES':'symbol':'1.2-2'
               }}</span>
           </div>
-        </div>
 
-        <!-- Expenses Section -->
-        <div class="space-y-2 pt-3 border-t border-gray-300">
-          <div class="flex justify-between items-center py-2 text-red-600">
-            <span class="font-medium">Company Expenses</span>
-            <div class="text-right">
-              <div class="font-semibold">- {{ summary.companyExpenses | currency:'KES':'symbol':'1.2-2' }}</div>
-              <div *ngIf="summary.pendingCompanyExpenses > 0" class="text-xs text-yellow-600">
-                ({{ summary.pendingCompanyExpenses | currency:'KES':'symbol':'1.2-2' }} pending)
+          <!-- Step 2: Minus Personal Expenses -->
+          <div class="border-t border-blue-200 pt-2">
+            <div class="flex justify-between items-center py-2">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded font-bold">MINUS</span>
+                <span class="text-gray-700 font-medium">Personal Expenses</span>
+              </div>
+              <div class="text-right">
+                <div class="font-semibold text-red-600">- {{ summary.personalExpenses | currency:'KES':'symbol':'1.2-2'
+                  }}</div>
+                <div *ngIf="summary.pendingPersonalExpenses > 0" class="text-xs text-yellow-600">
+                  ({{ summary.pendingPersonalExpenses | currency:'KES':'symbol':'1.2-2' }} pending)
+                </div>
+              </div>
+            </div>
+
+            <!-- Individual Personal Expenses List -->
+            <div *ngIf="personalExpensesList.length > 0" class="ml-8 mt-2 space-y-1">
+              <div *ngFor="let expense of personalExpensesList"
+                class="flex justify-between items-center text-sm text-gray-600">
+                <span class="flex items-center gap-2">
+                  • {{ expense.reason }}
+                  <span *ngIf="expense.status === 'PENDING'" class="text-xs text-yellow-600">(Pending)</span>
+                </span>
+                <span class="font-medium">{{ expense.amount | currency:'KES':'symbol':'1.2-2' }}</span>
               </div>
             </div>
           </div>
-          <div class="flex justify-between items-center py-2 border-t border-gray-200">
-            <span class="text-gray-700 font-semibold">Net After Expenses</span>
-            <span class="font-bold text-lg text-blue-600">{{ summary.netSalesAfterCompanyExpenses |
-              currency:'KES':'symbol':'1.2-2' }}</span>
-          </div>
-        </div>
 
-        <!-- Commission Section -->
-        <div class="space-y-2 pt-3 border-t border-gray-300">
-          <div class="flex justify-between items-center py-2 bg-green-50 px-3 rounded">
-            <span class="text-green-700 font-medium">Commission ({{ summary.commissionRate }}%)</span>
-            <span class="font-bold text-green-600">{{ summary.commissionEarned | currency:'KES':'symbol':'1.2-2'
+          <!-- Step 3: Minus Company Expenses -->
+          <div class="border-t border-blue-200 pt-2">
+            <div class="flex justify-between items-center py-2">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded font-bold">MINUS</span>
+                <span class="text-gray-700 font-medium">Company Expenses</span>
+              </div>
+              <div class="text-right">
+                <div class="font-semibold text-red-600">- {{ summary.companyExpenses | currency:'KES':'symbol':'1.2-2'
+                  }}</div>
+                <div *ngIf="summary.pendingCompanyExpenses > 0" class="text-xs text-yellow-600">
+                  ({{ summary.pendingCompanyExpenses | currency:'KES':'symbol':'1.2-2' }} pending)
+                </div>
+              </div>
+            </div>
+
+            <!-- Individual Company Expenses List -->
+            <div *ngIf="companyExpensesList.length > 0" class="ml-8 mt-2 space-y-1">
+              <div *ngFor="let expense of companyExpensesList"
+                class="flex justify-between items-center text-sm text-gray-600">
+                <span class="flex items-center gap-2">
+                  • {{ expense.reason }}
+                  <span *ngIf="expense.status === 'PENDING'" class="text-xs text-yellow-600">(Pending)</span>
+                </span>
+                <span class="font-medium">{{ expense.amount | currency:'KES':'symbol':'1.2-2' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 4: Expected Cash -->
+          <p-accordion>
+            <p-accordion-panel value="0">
+              <!-- Header with Expected Cash Amount -->
+              <p-accordion-header>
+                <div class="flex justify-between items-center w-full rounded pe-2">
+                  <div>
+                    <span class="text-blue-900 font-bold text-base md:text-lg">Expected Cash in Hand</span>
+                    <p class="text-xs text-blue-700 mt-0.5">Click to see calculation breakdown</p>
+                  </div>
+                  <span class="font-bold text-xl md:text-2xl text-blue-700">
+                    {{ summary.expectedDailySubmission | currency:'KES':'symbol':'1.2-2' }}
+                  </span>
+                </div>
+
+              </p-accordion-header>
+              <p-accordion-content>
+
+                <!-- Loading State -->
+                <div *ngIf="isLoading" class="p-4 space-y-3">
+                  <app-loader-skeleton *ngFor="let _ of [].constructor(3)"></app-loader-skeleton>
+                </div>
+
+                <!-- Loaded State -->
+                <div *ngIf="!isLoading && summary" class="p-4 space-y-3">
+                  <!-- M-Pesa Total -->
+                  <div class="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-lg border-2 border-green-300">
+                    <div class="flex justify-between items-center">
+                      <span class="text-green-900 font-bold text-lg flex items-center gap-2">
+                        <i class="pi pi-mobile text-2xl"></i>
+                        M-Pesa Collected
+                      </span>
+                      <span class="text-2xl font-bold text-green-700">
+                        {{ summary.mpesaTotal | currency:'KES':'symbol':'1.2-2' }}
+                      </span>
+                    </div>
+
+                    <!-- M-Pesa Breakdown -->
+                    <div class="mt-3 pt-3 border-t border-green-300 space-y-2 text-sm">
+                      <div class="flex justify-between items-center text-green-800">
+                        <span class="pl-4">• M-Pesa Deposit</span>
+                        <span class="font-semibold">{{ summary.mpesaDepositReceived | currency:'KES':'symbol':'1.2-2'
+                          }}</span>
+                      </div>
+                      <div class="flex justify-between items-center text-green-800">
+                        <span class="pl-4">• Till Number</span>
+                        <span class="font-semibold">{{ summary.tillNumberReceived | currency:'KES':'symbol':'1.2-2'
+                          }}</span>
+                      </div>
+                      <div class="flex justify-between items-center text-green-800">
+                        <span class="pl-4">• Send Money</span>
+                        <span class="font-semibold">{{ summary.sendMoneyReceived | currency:'KES':'symbol':'1.2-2'
+                          }}</span>
+                      </div>
+                      <div *ngIf="summary.mpesaExpenses > 0"
+                        class="flex justify-between items-center text-red-700 border-t border-green-300 pt-2">
+                        <span class="pl-4">• Expenses Paid</span>
+                        <span class="font-semibold">- {{ summary.mpesaExpenses | currency:'KES':'symbol':'1.2-2'
+                          }}</span>
+                      </div>
+                    </div>
+                    <div class="mt-3 pt-3 border-t-2 border-green-400">
+                      <div class="flex justify-between items-center">
+                        <span class="text-green-900 font-bold">M-Pesa Balance</span>
+                        <span class="text-xl font-bold text-green-800">
+                          {{ summary.physicalMpesaBalance | currency:'KES':'symbol':'1.2-2' }}
+                        </span>
+                      </div>
+                      <p class="text-xs text-green-700 mt-1">What you have in M-Pesa now</p>
+                    </div>
+                  </div>
+
+                  <!-- Cash -->
+                  <div class="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-lg border-2 border-blue-300">
+                    <div class="flex justify-between items-center">
+                      <span class="text-blue-900 font-bold text-lg flex items-center gap-2">
+                        <i class="pi pi-money-bill text-2xl"></i>
+                        Cash Collected
+                      </span>
+                      <span class="text-2xl font-bold text-blue-700">
+                        {{ summary.cashReceived | currency:'KES':'symbol':'1.2-2' }}
+                      </span>
+                    </div>
+                    <div *ngIf="summary.cashExpenses > 0" class="mt-3 pt-3 border-t border-blue-300 space-y-2 text-sm">
+                      <div class="flex justify-between items-center text-red-700">
+                        <span class="pl-4">• Expenses Paid</span>
+                        <span class="font-semibold">- {{ summary.cashExpenses | currency:'KES':'symbol':'1.2-2'
+                          }}</span>
+                      </div>
+                    </div>
+
+                    <div class="mt-3 pt-3 border-t-2 border-blue-400">
+                      <div class="flex justify-between items-center">
+                        <span class="text-blue-900 font-bold">Physical Cash Balance</span>
+                        <span class="text-xl font-bold text-blue-800">
+                          {{ summary.physicalCashBalance | currency:'KES':'symbol':'1.2-2' }}
+                        </span>
+                      </div>
+                      <p class="text-xs text-blue-700 mt-1">What you have in cash now</p>
+                    </div>
+                  </div>
+                </div>
+
+              </p-accordion-content>
+            </p-accordion-panel>
+          </p-accordion>
+
+          <!-- Step 5: Actual Cash Submitted -->
+          <div class="flex justify-between items-center py-3 border-t border-blue-200 rounded px-3"
+            [ngClass]="summary.actualMoneyCollected > 0 ? 'bg-white' : 'bg-gray-50'">
+            <div>
+              <span class="font-bold text-base md:text-lg"
+                [ngClass]="summary.actualMoneyCollected > 0 ? 'text-gray-900' : 'text-gray-500'">
+                Actual Cash Submitted
+              </span>
+              <p class="text-xs mt-0.5"
+                [ngClass]="summary.actualMoneyCollected > 0 ? 'text-gray-600' : 'text-gray-400'">
+                <span *ngIf="summary.actualMoneyCollected > 0">What distributor gave</span>
+                <span *ngIf="summary.actualMoneyCollected === 0">Awaiting trip completion</span>
+              </p>
+            </div>
+            <span class="font-bold text-xl md:text-2xl"
+              [ngClass]="summary.actualMoneyCollected > 0 ? 'text-gray-900' : 'text-gray-400'">
+              <span *ngIf="summary.actualMoneyCollected > 0">{{ summary.actualMoneyCollected |
+                currency:'KES':'symbol':'1.2-2' }}</span>
+              <span *ngIf="summary.actualMoneyCollected === 0">---</span>
+            </span>
+          </div>
+
+          <!-- Step 6: Variance (Excess/Shortage) - Only show if trip ended -->
+          <div *ngIf="summary.actualMoneyCollected > 0"
+            class="flex justify-between items-center py-3 border-t-2 border-blue-300 rounded px-3"
+            [ngClass]="summary.dailyVariance > 0 ? 'bg-green-50' : summary.dailyVariance < 0 ? 'bg-red-50' : 'bg-blue-50'">
+            <div>
+              <span class="font-bold text-base md:text-lg" [ngClass]="getVarianceClass(summary.dailyVariance)">
+                {{ getVarianceLabel(summary.dailyVariance) }}
+              </span>
+              <p class="text-xs mt-0.5"
+                [ngClass]="summary.dailyVariance > 0 ? 'text-green-700' : summary.dailyVariance < 0 ? 'text-red-700' : 'text-blue-700'">
+                <span *ngIf="summary.dailyVariance > 0">Distributor submitted extra money</span>
+                <span *ngIf="summary.dailyVariance < 0">Distributor submitted less than expected</span>
+                <span *ngIf="summary.dailyVariance === 0">Exact amount - Perfect match!</span>
+              </p>
+            </div>
+            <span class="font-bold text-xl md:text-2xl" [ngClass]="getVarianceClass(summary.dailyVariance)">
+              <span *ngIf="summary.dailyVariance !== 0">
+                {{ summary.dailyVariance > 0 ? '+' : '' }}{{ summary.dailyVariance | currency:'KES':'symbol':'1.2-2' }}
+              </span>
+              <span *ngIf="summary.dailyVariance === 0">KES 0.00</span>
+            </span>
+          </div>
+
+          <!-- Divider -->
+          <div class="border-t-4 border-yellow-400 my-4"></div>
+
+          <!-- Commission Calculation Header -->
+          <div class="bg-yellow-50 -mx-4 md:-mx-6 px-4 md:px-6 py-3 border-y-2 border-yellow-300">
+            <h3 class="font-bold text-yellow-900 text-base md:text-lg flex items-center gap-2">
+              <i class="pi pi-percentage"></i>
+              Daily Commission Calculation
+            </h3>
+          </div>
+
+          <!-- Step 7: Commission Earned -->
+          <div class="flex justify-between items-center py-2 mt-3">
+            <div class="flex items-center gap-2">
+              <span class="text-gray-700 font-medium">Gross Sales × {{ summary.commissionRate }}%</span>
+            </div>
+            <span class="font-semibold text-blue-600">{{ summary.commissionEarned | currency:'KES':'symbol':'1.2-2'
               }}</span>
           </div>
-          <div class="flex justify-between items-center py-2 text-orange-600">
-            <span class="font-medium">Personal Expenses</span>
-            <div class="text-right">
-              <div class="font-semibold">- {{ summary.personalExpenses | currency:'KES':'symbol':'1.2-2' }}</div>
-              <div *ngIf="summary.pendingPersonalExpenses > 0" class="text-xs text-yellow-600">
-                ({{ summary.pendingPersonalExpenses | currency:'KES':'symbol':'1.2-2' }} pending)
-              </div>
-            </div>
-          </div>
-        </div>
 
-
-        <!-- Final Settlement -->
-        <div class="space-y-3 pt-4 border-t-2 border-gray-400">
-          <div class="bg-blue-50 p-4 rounded-lg">
-            <div class="flex justify-between items-center mb-2">
-              <span class="text-blue-900 font-bold text-base md:text-lg">Amount to Submit</span>
-              <span class="text-2xl md:text-3xl font-bold text-blue-600">
-                {{ summary.amountToSubmit | currency:'KES':'symbol':'1.2-2' }}
-              </span>
+          <!-- Step 8: Minus Personal Expenses (from commission) -->
+          <div class="flex justify-between items-center py-2 border-t border-gray-200">
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded font-bold">MINUS</span>
+              <span class="text-gray-700 font-medium">Personal Expenses</span>
             </div>
-            <p class="text-xs text-blue-700">Submit this amount to the company</p>
+            <span class="font-semibold text-red-600">- {{ summary.personalExpenses | currency:'KES':'symbol':'1.2-2'
+              }}</span>
           </div>
 
-          <div [ngClass]="summary.creditBalance >= 0 ? 'bg-green-50' : 'bg-red-50'" class="p-4 rounded-lg">
-            <div class="flex justify-between items-center mb-2">
-              <span [ngClass]="summary.creditBalance >= 0 ? 'text-green-900' : 'text-red-900'"
-                class="font-bold text-base md:text-lg">
-                {{ getCreditBalanceLabel(summary.creditBalance) }}
-              </span>
-              <span class="text-2xl md:text-3xl font-bold" [ngClass]="getCreditBalanceClass(summary.creditBalance)">
-                {{ summary.distributorTakesHome | currency:'KES':'symbol':'1.2-2' }}
-              </span>
+          <!-- Step 9: Add/Subtract Variance (Only if trip ended) -->
+          <div *ngIf="summary.actualMoneyCollected > 0"
+            class="flex justify-between items-center py-2 border-t border-gray-200">
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 text-xs rounded font-bold"
+                [ngClass]="summary.dailyVariance > 0 ? 'bg-green-100 text-green-700' : summary.dailyVariance < 0 ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'">
+                {{ summary.dailyVariance > 0 ? 'ADD' : summary.dailyVariance < 0 ? 'MINUS' : 'NO CHANGE' }} </span>
+                  <span class="font-medium"
+                    [ngClass]="summary.dailyVariance > 0 ? 'text-green-700' : summary.dailyVariance < 0 ? 'text-red-700' : 'text-blue-700'">
+                    {{ getVarianceLabel(summary.dailyVariance) }}
+                  </span>
             </div>
-            <p class="text-xs" [ngClass]="summary.creditBalance >= 0 ? 'text-green-700' : 'text-red-700'">
-              <span *ngIf="summary.creditBalance >= 0">Your commission after personal expenses</span>
-              <span *ngIf="summary.creditBalance < 0">You owe the company this amount</span>
-            </p>
-          </div>
-        </div>
-
-        <!-- Payment Method Breakdown -->
-        <div class="space-y-3 pt-4 border-t-2 border-gray-300">
-          <h3 class="font-bold text-gray-800 mb-2">Money Received</h3>
-
-          <!-- M-Pesa Total -->
-          <div class="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-lg border-2 border-green-300">
-            <div class="flex justify-between items-center">
-              <span class="text-green-900 font-bold text-lg flex items-center gap-2">
-                <i class="pi pi-mobile text-2xl"></i>
-                M-Pesa Total
+            <span class="font-semibold"
+              [ngClass]="summary.dailyVariance > 0 ? 'text-green-700' : summary.dailyVariance < 0 ? 'text-red-700' : 'text-blue-700'">
+              <span *ngIf="summary.dailyVariance !== 0">
+                {{ summary.dailyVariance > 0 ? '+' : '' }}{{ summary.dailyVariance | currency:'KES':'symbol':'1.2-2' }}
               </span>
-              <span class="text-2xl font-bold text-green-700">
-                {{ summary.mpesaTotal | currency:'KES':'symbol':'1.2-2' }}
-              </span>
-            </div>
-
-            <!-- M-Pesa Breakdown -->
-            <div class="mt-3 pt-3 border-t border-green-300 space-y-2 text-sm">
-              <div class="flex justify-between items-center text-green-800">
-                <span class="pl-4">• M-Pesa Deposit</span>
-                <span class="font-semibold">{{ summary.mpesaDepositReceived | currency:'KES':'symbol':'1.2-2' }}</span>
-              </div>
-              <div class="flex justify-between items-center text-green-800">
-                <span class="pl-4">• Till Number</span>
-                <span class="font-semibold">{{ summary.tillNumberReceived | currency:'KES':'symbol':'1.2-2' }}</span>
-              </div>
-              <div class="flex justify-between items-center text-green-800">
-                <span class="pl-4">• Send Money</span>
-                <span class="font-semibold">{{ summary.sendMoneyReceived | currency:'KES':'symbol':'1.2-2' }}</span>
-              </div>
-              <div *ngIf="summary.mpesaExpenses > 0"
-                class="flex justify-between items-center text-red-700 border-t border-green-300 pt-2">
-                <span class="pl-4">• Expenses Paid</span>
-                <span class="font-semibold">- {{ summary.mpesaExpenses | currency:'KES':'symbol':'1.2-2' }}</span>
-              </div>
-            </div>
-            <div class="mt-3 pt-3 border-t-2 border-green-400">
-              <div class="flex justify-between items-center">
-                <span class="text-green-900 font-bold">Net M-Pesa Balance</span>
-                <span class="text-xl font-bold text-green-800">
-                  {{ (summary.mpesaTotal - summary.mpesaExpenses) | currency:'KES':'symbol':'1.2-2' }}
-                </span>
-              </div>
-            </div>
+              <span *ngIf="summary.dailyVariance === 0">KES 0.00</span>
+            </span>
           </div>
 
-          <!-- Cash -->
-          <div class="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-lg border-2 border-blue-300">
-            <div class="flex justify-between items-center">
-              <span class="text-blue-900 font-bold text-lg flex items-center gap-2">
-                <i class="pi pi-money-bill text-2xl"></i>
-                Cash
-              </span>
-              <span class="text-2xl font-bold text-blue-700">
-                {{ summary.cashReceived | currency:'KES':'symbol':'1.2-2' }}
-              </span>
-            </div>
-            <div *ngIf="summary.cashExpenses > 0" class="mt-3 pt-3 border-t border-blue-300 space-y-2 text-sm">
-              <div class="flex justify-between items-center text-red-700">
-                <span class="pl-4">• Expenses Paid</span>
-                <span class="font-semibold">- {{ summary.cashExpenses | currency:'KES':'symbol':'1.2-2' }}</span>
-              </div>
-            </div>
+          <!-- Note if trip not ended -->
+          <div *ngIf="summary.actualMoneyCollected === 0"
+            class="flex items-center gap-2 py-2 px-3 bg-yellow-50 border border-yellow-300 rounded text-sm text-yellow-800">
+            <i class="pi pi-info-circle"></i>
+            <span>Variance will be calculated when trip ends and actual cash is recorded</span>
+          </div>
 
-            <div class="mt-3 pt-3 border-t-2 border-blue-400">
-              <div class="flex justify-between items-center">
-                <span class="text-blue-900 font-bold">Net Cash Balance</span>
-                <span class="text-xl font-bold text-blue-800">
-                  {{ (summary.cashReceived - summary.cashExpenses) | currency:'KES':'symbol':'1.2-2' }}
-                </span>
-              </div>
+          <!-- Final Amount -->
+          <div class="flex justify-between items-center py-4 border-t-4 rounded-lg px-4 mt-3"
+            [ngClass]="summary.actualMoneyCollected === 0 ? 'bg-gray-100 border-gray-400' : summary.finalDistributorAmount >= 0 ? 'bg-green-100 border-green-500' : 'bg-red-100 border-red-500'">
+            <div>
+              <span class="font-bold text-lg md:text-xl"
+                [ngClass]="summary.actualMoneyCollected === 0 ? 'text-gray-600' : getFinalAmountClass(summary.finalDistributorAmount)">
+                <span *ngIf="summary.actualMoneyCollected > 0">{{ getFinalAmountLabel(summary.finalDistributorAmount)
+                  }}</span>
+                <span *ngIf="summary.actualMoneyCollected === 0">Estimated Commission</span>
+              </span>
+              <p class="text-xs mt-1"
+                [ngClass]="summary.actualMoneyCollected === 0 ? 'text-gray-500' : summary.finalDistributorAmount >= 0 ? 'text-green-700' : 'text-red-700'">
+                <span *ngIf="summary.actualMoneyCollected === 0">Final amount will be calculated after trip ends</span>
+                <span *ngIf="summary.actualMoneyCollected > 0 && summary.finalDistributorAmount > 0">&#x2705; Amount to pay
+                  distributor today</span>
+                <span *ngIf="summary.actualMoneyCollected > 0 && summary.finalDistributorAmount < 0">&#x26A0; Amount
+                  distributor must pay back to company</span>
+                <span *ngIf="summary.actualMoneyCollected > 0 && summary.finalDistributorAmount === 0">&#x2713; Break even - No
+                  payment needed either way</span>
+              </p>
             </div>
+            <span class="font-bold text-2xl md:text-4xl"
+              [ngClass]="summary.actualMoneyCollected === 0 ? 'text-gray-600' : getFinalAmountClass(summary.finalDistributorAmount)">
+              {{ (summary.actualMoneyCollected === 0 ? summary.commissionAfterPersonalExpenses :
+              summary.finalDistributorAmount) | currency:'KES':'symbol':'1.2-2' }}
+            </span>
           </div>
         </div>
       </div>
     </p-card>
-
   </div>
 </div>
