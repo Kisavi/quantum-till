@@ -11,10 +11,11 @@ export interface Trip {
   endOdometerReading?: number;
   startTime: Date;
   endTime?: Date;
-  status: 'PENDING' | 'ONGOING' | 'ENDED';
+  status: TripStatus;
   totalKm?: number;
   durationMinutes?: number;
-  createdOn: Date
+  createdOn: Date,
+  actualCashSubmission?: number;
 }
 
 export type TripStatus = 'PENDING' | 'ONGOING' | 'ENDED';
@@ -31,4 +32,5 @@ export interface CreateTripDto {
 export interface EndTripDto {
   endOdometerReading: number;
   endTime: Date;
+  actualCashSubmission?: number;
 }

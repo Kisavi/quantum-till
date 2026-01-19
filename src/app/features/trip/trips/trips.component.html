@@ -36,6 +36,7 @@
       </ng-template>
 
       <ng-template pTemplate="body" let-trip>
+        <!-- <pre>{{trip | json}}</pre> -->
         <tr class="hover:bg-gray-50">
           <td class="font-medium">{{ trip?.distributor?.displayName }}</td>
           <td>{{ trip.vehicle.regNo }}</td>
@@ -176,8 +177,24 @@
       <p><strong>Start KM:</strong> {{ selectedTrip?.startOdometerReading | number }}</p>
       <div class="flex flex-col gap-2 mt-4">
         <label class="font-medium">Ending Odometer <span class="text-red-600">*</span></label>
-        <input pInputText type="number" formControlName="endOdometerReading" class="w-full" />
+        <input pInputText type="number" formControlName="endOdometerReading" placeholder="Enter the current kilometer readings on the odometer" class="w-full" />
       </div>
+
+            <!-- Actual Cash Collected -->
+      <div class="flex flex-col gap-2 mt-2">
+        <label class="font-medium">Actual Cash Collected <span class="text-red-600">*</span></label>
+        <input 
+        pInputText
+          formControlName="actualCashSubmission" 
+          type="number"
+          placeholder="Enter the amount received from the rider"
+          class="w-full"
+        />
+        @if (endForm.get('actualCashSubmission')?.invalid && endForm.get('actualCashSubmission')?.touched) {
+          <small class="text-red-500">Actual amount collected is required</small>
+        }
+      </div>
+
     </form>
     <ng-template pTemplate="footer">
       <p-button label="Cancel" severity="secondary" (onClick)="visibleEndDialog=false" class="p-button-text"></p-button>
